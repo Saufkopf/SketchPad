@@ -1,32 +1,37 @@
-# SketchPad 1.0 – Testanleitung
+# SketchPad 1.1 – Installation und Test
 
-## Inhalt
-`index.html`, `style.css`, `app.js`, `manifest.webmanifest`, `sw.js`, `icon.svg`.
+## Sicheres Update
 
-## Auf Android installieren (empfohlen)
-1. Alle sechs Dateien gemeinsam in das Hauptverzeichnis eines neuen GitHub-Repositories hochladen (z. B. `sketchpad`).
-2. Im Repository unter **Settings → Pages → Build and deployment** bei Source **Deploy from a branch**, Branch **main**, Folder **/(root)** wählen und speichern.
-3. Nach der Veröffentlichung die HTTPS-Adresse `https://BENUTZERNAME.github.io/sketchpad/` in **Chrome auf dem Android-Tablet** öffnen.
-4. Chrome-Menü **⋮ → Zum Startbildschirm hinzufügen → Installieren** (Bezeichnung je nach Chrome-Version).
-5. Nach dem ersten vollständigen Laden funktioniert die App auch offline. Für Updates die Seite bei Internetverbindung neu laden.
-
-## Lokal am Computer testen
-Im Ordner mit den Dateien ein Terminal öffnen und `python -m http.server 8000` ausführen. Dann `http://localhost:8000` öffnen. Nicht direkt per `file://` starten: Service Worker und einige Speicherfunktionen benötigen einen lokalen Server oder HTTPS.
+1. In SketchPad 1.0 zuerst **Projekt exportieren** und die JSON-Datei außerhalb des Browsers aufbewahren.
+2. Die ZIP-Datei entpacken. In GitHub `saufkopf/SketchPad` unter **Code → Add file → Upload files** die Dateien aus dem Paket hochladen (nicht die ZIP-Datei). Vorhandene Dateien ersetzen. `index.html`, `app.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icon.svg` müssen im Repository-Hauptverzeichnis liegen.
+3. **Commit changes**. Nach der Veröffentlichung SketchPad neu öffnen. Gegebenenfalls Seite neu laden oder die installierte App vollständig schließen und neu öffnen, damit die neue Offline-Version geladen wird.
+4. Wenn ein bestehendes Projekt nicht angezeigt wird, unter **☰ → Projekt importieren** die zuvor exportierte JSON-Datei auswählen.
 
 ## Bedienung
-- Stift, Radierer, Linie, Rechteck, Ellipse, Maßlinie, Verschieben: linke Leiste.
-- Beim Maßlinienwerkzeug nach dem Ziehen den Maßtext eingeben. Die Zeichnung wird **nicht automatisch maßstäblich** angepasst.
-- Bei aktiviertem „Nur Stift“ werden nach der ersten erkannten Stifteingabe Finger zum Verschieben verwendet. Vorher ist Fingerzeichnen möglich, um die App ohne Stift testen zu können.
-- Zwei Finger: zoomen und verschieben. Mausrad: zoomen. Hand-Werkzeug: verschieben.
-- Oben: rückgängig, wiederholen, Ansicht anpassen, Menü.
-- Unten: Farbe, Strichstärke, Papierformat, Raster.
-- Menü: Zeichnungen anlegen, laden, löschen, als PNG oder JSON exportieren, JSON importieren, über Druckdialog als PDF speichern.
 
-## Grenzen der ersten Version
-- Der Radierer malt weiß und entfernt keine Vektorobjekte; auf Rasterfeldern kann das sichtbar sein.
-- A4/A3-Formate sind proportional korrekt; für maßstäbliche Ausdrucke muss die Druckskalierung geprüft werden.
-- Keine Ebenen, kein Textwerkzeug, keine PDF-Importfunktion und keine native Android-Handballenerkennung.
-- PDF-Ausgabe erfolgt über den Druckdialog; im Dialog „Als PDF speichern“ auswählen.
-- Daten werden in IndexedDB des jeweiligen Browsers gespeichert. Browserdaten-Löschung entfernt Projekte. Wichtige Skizzen regelmäßig als JSON exportieren.
-- Offlinefähigkeit erst nach erfolgreicher Installation/erstem Laden über HTTPS.
-- Auf einzelnen Geräten ist die Stift-/Touch-Erkennung browserabhängig.
+- **✎ Stift:** mit dem Samsung S Pen zeichnen. Die Linien werden mit weichen Kurven dargestellt.
+- **▥ Wand:** Linie ziehen; eine blaue Doppelwand entsteht. Annähernd waagerechte/senkrechte Linien rasten ein.
+- **▤ Fenster / 🚪 Tür:** Start und Ende mit dem Stift ziehen. In Version 1.1 sind es frei platzierbare blaue Symbole, noch kein automatisches Ausschneiden der Wand.
+- **↔ Maß:** zwei Endpunkte durch Ziehen festlegen, Maßzahl eingeben und Abstand (negativ/positiv) festlegen. Rot mit zwei Maßhilfslinien und gleich langen schrägen Endmarken.
+- **📷 Foto:** Kamera/Galerie auswählen; das Bild wird auf 1600, 2560 oder 4000 px längste Seite reduziert. Das Original bleibt außerhalb von SketchPad unverändert. Mit Werkzeug **▧** ein entsperrtes Foto verschieben. Zum Skalieren/Drehen **🔒 Foto doppelt antippen**, Werte eingeben. Einmal antippen sperrt/entsperrt das ausgewählte Foto.
+- **＋ Seite:** weitere Zeichenfläche; **＋ Checkliste:** ausfüllbare Küchen-Checkliste mit S Pen. Kästchen können handschriftlich markiert werden. Das Textwerkzeug **T** ermöglicht Texteingaben.
+- **Finger:** nach Erkennung des S Pen ein Finger = Radierer, zwei Finger = verschieben/zoomen. Wenn Handballenberührungen Probleme machen, bitte melden.
+- **⋮ → Alle Seiten als PDF drucken:** im Druckdialog **Als PDF speichern** wählen. Für Weitergabe per E-Mail PDF als Anhang versenden.
+- **⋮ → Projekt sichern (.json):** alle Seiten und komprimierten Fotos in einer bearbeitbaren Sicherungsdatei. Kann später wieder importiert werden.
+
+## Speichern und Datensicherheit
+
+- Änderungen werden nach kurzer Pause automatisch in IndexedDB gespeichert; bei ausstehenden Änderungen zusätzlich alle zwei Minuten.
+- Beim Wechsel in den Hintergrund wird eine weitere Speicherung versucht. Android garantiert nicht, dass beim Schließen noch ausreichend Zeit bleibt. Deshalb ist die Speicherung nach jeder Änderung entscheidend.
+- Bei einem Fehler steht **Speichern fehlgeschlagen** in der Statusanzeige. Nicht ohne Sicherung fortfahren.
+- Für wichtige Aufmaße **regelmäßig JSON exportieren**, z. B. nach dem Kundentermin. Browserdaten löschen oder Geräteverlust kann lokale Projekte löschen.
+- Bilder werden komprimiert. Bei Detailaufnahmen 4000 px wählen und wichtige Originalfotos separat behalten. Starke Vergrößerungen können trotz hoher Auflösung pixelig werden.
+
+## Bekannte Einschränkungen dieses Teststands
+
+- Fenster/Türen werden noch nicht automatisch in vorhandene Doppelwände eingeschnitten; sie sind separat positionierbare Symbole.
+- Die Maßlinie wird durch numerische Abstandseingabe positioniert, noch nicht durch einen dritten Stiftzug.
+- Der Radierer zeichnet derzeit weiße Striche über die Zeichnung, er entfernt noch keine Vektorobjekte.
+- Die Fotoauswahl erlaubt Verschieben und numerisches Skalieren/Drehen, noch keine direkten Transformationsgriffe.
+- Die PDF-Erstellung erfolgt über den Android-Druckdialog und muss auf dem Samsung-Tablet getestet werden.
+- Eine Checkliste ist als handschriftliche Vorlagenseite umgesetzt; die Felder sind noch nicht als separate strukturierte Datensätze erfasst.
