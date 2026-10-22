@@ -1,5 +1,7 @@
-SketchPad 1.4.1 – kleine Bemaßungen bei starkem Zoom
+SketchPad 1.4.2 – Optische Korrekturen
 
-Fehlerkorrektur: Mindestlänge einer neuen Bemaßung wird nun in Bildschirm-Pixeln geprüft, statt fest in Zeichnungseinheiten. Bei 1500–2000 % lassen sich dadurch auch kurze Maße erzeugen. Auswahlradius bestehender Bemaßungen reduziert, damit neue Maße in engen Details möglich sind.
-
-Alle Dateien aus ZIP auf GitHub ersetzen, Commit abwarten. Zum Testen direkt https://saufkopf.github.io/SketchPad/index.html?v=141 öffnen. Projekte vorher als JSON sichern; Browserdaten nicht löschen.
+- Maßzahlen ohne weißen Hintergrund, die Maßlinie bleibt sichtbar.
+- Auswahl „Fein…“ setzt den Stift nun wirklich auf 0,5; Regler und Zahlenanzeige folgen.
+- Finger-Radierer 38 Bildschirmpixel links vom Finger, Kreis und tatsächliche Radierlinie deckungsgleich. S Pen bleibt unverändert.
+- Alle Dateien auf GitHub ersetzen und committen. Zum Test: https://saufkopf.github.io/SketchPad/index.html?v=142
+- Projekte vorher als JSON sichern; keine Browserdaten löschen.
