@@ -23,33 +23,53 @@ if(item.type==='image'){let img=imageCache.get(item.src);if(!img){img=new Image(
 if(item.type==='text'){ctx.fillStyle=item.color||color;ctx.font=`${item.font||21}px sans-serif`;ctx.fillText(item.label||'',item.x,item.y);ctx.restore();return}
 if(item.type==='measure'){let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,off=Number(item.offset??-42),ext=7;ctx.strokeStyle=RED;ctx.lineWidth=1.5;ctx.beginPath();for(let pt of [{x:item.x1,y:item.y1},{x:item.x2,y:item.y2}]){ctx.moveTo(pt.x-nx*3,pt.y-ny*3);ctx.lineTo(pt.x+nx*(off+Math.sign(off||1)*ext),pt.y+ny*(off+Math.sign(off||1)*ext))}let a={x:item.x1+nx*off,y:item.y1+ny*off},b={x:item.x2+nx*off,y:item.y2+ny*off};ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);for(let q of[a,b]){ctx.moveTo(q.x-ux*5-nx*5,q.y-uy*5-ny*5);ctx.lineTo(q.x+ux*5+nx*5,q.y+uy*5+ny*5)}ctx.stroke();let mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.translate(mid.x,mid.y);let angle=Math.atan2(dy,dx);if(angle>Math.PI/2||angle< -Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font='17px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';let t=item.label||'…';let tw=ctx.measureText(t).width;ctx.fillStyle='white';ctx.fillRect(-tw/2-5,-25,tw+10,22);ctx.fillStyle=RED;ctx.fillText(t,0,-5);ctx.restore();return}
 if(item.type==='wall'){
- // Both wall edges share the same joined geometry. Openings are removed from BOTH edges.
  const a={x:item.x1,y:item.y1},b={x:item.x2,y:item.y2},dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
- const openings=page().items.filter(o=>(o.type==='window'||o.type==='door')&&(o.wallId===item.id||(item.id==null&&o.wallId==null&&o.wallAxis&&Math.abs(o.wallAxis.dx-dx)<1&&Math.abs(o.wallAxis.dy-dy)<1)));
- ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;
- for(const side of [0,20]){
-  const cuts=openings.map(o=>{let t1=(o.x1-a.x)*ux+(o.y1-a.y)*uy,t2=(o.x2-a.x)*ux+(o.y2-a.y)*uy;return [Math.max(0,Math.min(t1,t2)),Math.min(L,Math.max(t1,t2))]}).filter(q=>q[1]>q[0]).sort((a,b)=>a[0]-b[0]);
-  let cursor=0;ctx.beginPath();for(const [lo,hi] of cuts){if(lo>cursor){ctx.moveTo(a.x+ux*cursor+nx*side,a.y+uy*cursor+ny*side);ctx.lineTo(a.x+ux*lo+nx*side,a.y+uy*lo+ny*side)}cursor=Math.max(cursor,hi)}if(cursor<L){ctx.moveTo(a.x+ux*cursor+nx*side,a.y+uy*cursor+ny*side);ctx.lineTo(b.x+nx*side,b.y+ny*side)}ctx.stroke();
+ const offset=item.wallOffset??20;
+ const walls=page().items.filter(i=>i.type==='wall');
+ const index=walls.indexOf(item),previous=index>0?walls[index-1]:null,next=index>=0?walls[index+1]:null;
+ const lineIntersection=(p,v,q,w)=>{let det=v.x*w.y-v.y*w.x;if(Math.abs(det)<1e-5)return null;let t=((q.x-p.x)*w.y-(q.y-p.y)*w.x)/det;return{x:p.x+t*v.x,y:p.y+t*v.y}};
+ const endpoint=(other,atStart)=>{
+  if(!other)return null;
+  let anchor=atStart?a:b,join=atStart?{x:other.x2,y:other.y2}:{x:other.x1,y:other.y1};
+  if(Math.hypot(anchor.x-join.x,anchor.y-join.y)>1.5)return null;
+  let odx=other.x2-other.x1,ody=other.y2-other.y1,ol=Math.hypot(odx,ody)||1;
+  let oo=other.wallOffset??20;
+  let q={x:join.x-ody/ol*oo,y:join.y+odx/ol*oo};
+  let pt={x:anchor.x+nx*offset,y:anchor.y+ny*offset};
+  let hit=lineIntersection(pt,{x:ux,y:uy},q,{x:odx/ol,y:ody/ol});
+  return hit&&Math.hypot(hit.x-anchor.x,hit.y-anchor.y)<Math.abs(offset)*6?hit:null;
+ };
+ const startJoin=endpoint(previous,true),endJoin=endpoint(next,false);
+ const openings=page().items.filter(o=>(o.type==='window'||o.type==='door')&&o.wallId===item.id);
+ ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;ctx.lineCap='butt';ctx.lineJoin='miter';
+ for(const side of [0,offset]){
+  const cuts=openings.map(o=>{let t1=(o.x1-a.x)*ux+(o.y1-a.y)*uy,t2=(o.x2-a.x)*ux+(o.y2-a.y)*uy;return[Math.max(0,Math.min(t1,t2)),Math.min(L,Math.max(t1,t2))]}).filter(q=>q[1]>q[0]).sort((a,b)=>a[0]-b[0]);
+  const at=t=>({x:a.x+ux*t+nx*side,y:a.y+uy*t+ny*side});
+  const drawPart=(lo,hi)=>{if(hi-lo<.01)return;let p=at(lo),q=at(hi);if(side===offset&&lo===0&&startJoin)p=startJoin;if(side===offset&&hi===L&&endJoin)q=endJoin;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y)};
+  let cursor=0;ctx.beginPath();for(const [lo,hi] of cuts){drawPart(cursor,lo);cursor=Math.max(cursor,hi)}drawPart(cursor,L);ctx.stroke();
  }
+ // Close free wall ends, but never cap a joined continuation.
+ ctx.beginPath();if(!previous||Math.hypot(previous.x2-a.x,previous.y2-a.y)>1.5){ctx.moveTo(a.x,a.y);ctx.lineTo(a.x+nx*offset,a.y+ny*offset)}
+ if(!next||Math.hypot(next.x1-b.x,next.y1-b.y)>1.5){ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*offset,b.y+ny*offset)}ctx.stroke();
  ctx.restore();return;
 }
 if(item.type==='window'||item.type==='door'){
- let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,axis=item.wallAxis||{dx,dy},axisL=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/axisL,uy=axis.dy/axisL,nx=-uy,ny=ux,side=item.wallSide||0,extent=dx*ux+dy*uy,lo=Math.min(0,extent),hi=Math.max(0,extent);
+ let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,axis=item.wallAxis||{dx,dy},axisL=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/axisL,uy=axis.dy/axisL,nx=-uy,ny=ux,side=item.wallSide||0,wallOffset=item.wallOffset??20,otherEdge=side===0?wallOffset:-wallOffset,extent=dx*ux+dy*uy,lo=Math.min(0,extent),hi=Math.max(0,extent);
  const pt=(t,o)=>({x:item.x1+ux*t+nx*o,y:item.y1+uy*t+ny*o});
  const seg=(a,b)=>{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)};
  ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.beginPath();
  if(item.type==='window'){
   // Frame remains INSIDE wall: near the selected edge, or near the opposite edge.
-  const inner=side===0?6:-6;
-  seg(pt(lo,0),pt(lo,20-side));seg(pt(hi,0),pt(hi,20-side));
-  seg(pt(lo,inner),pt(hi,inner));seg(pt(lo,inner+(side===0?4:-4)),pt(hi,inner+(side===0?4:-4)));
+  const inner=Math.sign(otherEdge)*6;
+  seg(pt(lo,0),pt(lo,otherEdge));seg(pt(hi,0),pt(hi,otherEdge));
+  seg(pt(lo,inner),pt(hi,inner));seg(pt(lo,inner+Math.sign(otherEdge)*4),pt(hi,inner+Math.sign(otherEdge)*4));
   // Sill projects outside on the edge selected by the user.
-  const sill=side===0?-5:5;seg(pt(lo-7,sill),pt(hi+7,sill));
+  const sill=-Math.sign(otherEdge)*5;seg(pt(lo-7,sill),pt(hi+7,sill));
  }else{
   // Drag direction controls left/right door. Swing is towards the wall side selected.
-  const swing=side===0?-1:1;
+  const swing=-Math.sign(otherEdge);
   const hinge=pt(0,0),tip=pt(0,swing*L);
-  seg(hinge,tip);seg(pt(0,0),pt(0,20-side));seg(pt(extent,0),pt(extent,20-side));
+  seg(hinge,tip);seg(pt(0,0),pt(0,otherEdge));seg(pt(extent,0),pt(extent,otherEdge));
   let start=Math.atan2(uy*(extent>=0?1:-1),ux*(extent>=0?1:-1)),end=Math.atan2(ny*swing,nx*swing);
   ctx.moveTo(pt(extent,0).x,pt(extent,0).y);ctx.arc(hinge.x,hinge.y,L,start,end,(extent>=0?swing<0:swing>0));
  }
@@ -67,7 +87,7 @@ function drawWallJoins(p){
   ctx.beginPath();ctx.moveTo(p1.x,p1.y);if(meet&&Math.hypot(meet.x-p1.x,meet.y-p1.y)<100)ctx.lineTo(meet.x,meet.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
  }ctx.restore();
 }
-function renderPage(p){let b=bounds(p);ctx.fillStyle='#fff';if(b){ctx.shadowColor='#0003';ctx.shadowBlur=14/view.z;ctx.fillRect(0,0,b.w,b.h);ctx.shadowBlur=0;ctx.beginPath();ctx.rect(0,0,b.w,b.h);ctx.clip()}else{let[w,h]=dims(),a=world(0,0),z=world(w,h);ctx.fillRect(a.x,a.y,z.x-a.x,z.y-a.y)}if(p.grid){let step=20*MM,[w,h]=dims(),a=world(0,0),z=world(w,h),left=b?0:a.x,top=b?0:a.y,right=b?b.w:z.x,bottom=b?b.h:z.y;ctx.strokeStyle='#e5ebf0';ctx.lineWidth=.7/view.z;ctx.beginPath();let count=0;for(let x=Math.ceil(left/step)*step;x<right&&count++<300;x+=step){ctx.moveTo(x,top);ctx.lineTo(x,bottom)}count=0;for(let y=Math.ceil(top/step)*step;y<bottom&&count++<300;y+=step){ctx.moveTo(left,y);ctx.lineTo(right,y)}ctx.stroke()}if(p.kind==='checklist')drawChecklist(p);for(let item of p.items)drawItem(item);drawWallJoins(p);if(active)drawItem(active);if(measureDraft)drawItem(measureDraft)}
+function renderPage(p){let b=bounds(p);ctx.fillStyle='#fff';if(b){ctx.shadowColor='#0003';ctx.shadowBlur=14/view.z;ctx.fillRect(0,0,b.w,b.h);ctx.shadowBlur=0;ctx.beginPath();ctx.rect(0,0,b.w,b.h);ctx.clip()}else{let[w,h]=dims(),a=world(0,0),z=world(w,h);ctx.fillRect(a.x,a.y,z.x-a.x,z.y-a.y)}if(p.grid){let step=20*MM,[w,h]=dims(),a=world(0,0),z=world(w,h),left=b?0:a.x,top=b?0:a.y,right=b?b.w:z.x,bottom=b?b.h:z.y;ctx.strokeStyle='#e5ebf0';ctx.lineWidth=.7/view.z;ctx.beginPath();let count=0;for(let x=Math.ceil(left/step)*step;x<right&&count++<300;x+=step){ctx.moveTo(x,top);ctx.lineTo(x,bottom)}count=0;for(let y=Math.ceil(top/step)*step;y<bottom&&count++<300;y+=step){ctx.moveTo(left,y);ctx.lineTo(right,y)}ctx.stroke()}if(p.kind==='checklist')drawChecklist(p);for(let item of p.items)drawItem(item);if(active)drawItem(active);if(measureDraft)drawItem(measureDraft)}
 function draw(){if(!canvas.width)return;let[w,h]=dims();ctx.clearRect(0,0,w,h);ctx.fillStyle='#dfe5eb';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.z,view.z);renderPage(page());ctx.restore();if(eraserCursor){ctx.beginPath();ctx.arc(eraserCursor.x-10,eraserCursor.y,eraserSize*view.z/2,0,Math.PI*2);ctx.strokeStyle='#e34040';ctx.lineWidth=1.5;ctx.stroke()}status()}
 function eventPoint(e){let r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function zoomAt(f,x,y){let a=world(x,y);view.z=Math.max(.15,Math.min(8,view.z*f));view.x=x-a.x*view.z;view.y=y-a.y*view.z;draw()}
@@ -76,20 +96,20 @@ function photoAt(p){return[...page().items].reverse().find(i=>i.type==='image'&&
 function snap(a,b){let dx=b.x-a.x,dy=b.y-a.y;if(Math.abs(dx)<Math.abs(dy)*.2)b.x=a.x;else if(Math.abs(dy)<Math.abs(dx)*.2)b.y=a.y;return b}
 function resetInput(){pointers.clear();gesture=null;active=null;eraserCursor=null}
 function finishWall(){wallEnd=null;if($('finishwall'))$('finishwall').hidden=true}
-function nearestWall(a){let best=null,dist=24/view.z;for(let i of page().items){if(i.type!=='wall')continue;let dx=i.x2-i.x1,dy=i.y2-i.y1,len=dx*dx+dy*dy||1,L=Math.sqrt(len),nx=-dy/L,ny=dx/L;for(let side of [0,20]){let x=i.x1+nx*side,y=i.y1+ny*side,t=Math.max(0,Math.min(1,((a.x-x)*dx+(a.y-y)*dy)/len)),q={x:x+t*dx,y:y+t*dy},d=Math.hypot(a.x-q.x,a.y-q.y);if(d<dist){best={wall:i,point:q,side};dist=d}}}return best}
+function nearestWall(a){let best=null,dist=24/view.z;for(let i of page().items){if(i.type!=='wall')continue;let dx=i.x2-i.x1,dy=i.y2-i.y1,len=dx*dx+dy*dy||1,L=Math.sqrt(len),nx=-dy/L,ny=dx/L;for(let side of [0,i.wallOffset??20]){let x=i.x1+nx*side,y=i.y1+ny*side,t=Math.max(0,Math.min(1,((a.x-x)*dx+(a.y-y)*dy)/len)),q={x:x+t*dx,y:y+t*dy},d=Math.hypot(a.x-q.x,a.y-q.y);if(d<dist){best={wall:i,point:q,side};dist=d}}}return best}
 function numberDialog(item){const dlg=$('numberdialog'),inp=$('numberinput');inp.value='';dlg.showModal();setTimeout(()=>inp.focus(),60);let done=(ok)=>{dlg.close();if(ok){item.label=inp.value.trim()||'—';page().items.push(item);redo=[];changed()}measureDraft=null;measureStage=0;resetInput();draw()};$('numberok').onclick=()=>done(true);$('numbercancel').onclick=()=>done(false);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();done(true)}};dlg.oncancel=e=>{e.preventDefault();done(false)}}
 function down(e){if($('numberdialog').open)return;if(e.pointerType==='mouse'&&e.button===1){e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:'mouse'});gesture={pan:true,p,start:{...view}};return}e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(e.pointerType==='pen')stylusSeen=true;if(pointers.size===2){active=null;let ps=[...pointers.values()];gesture={distance:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:view.z,center:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}};gesture.anchor=world(gesture.center.x,gesture.center.y);draw();return}if(pointers.size>2)return;if(tool==='pan'){gesture={pan:true,p,start:{...view}};return}let a=world(p.x,p.y);if(tool==='photo'){let hit=photoAt(a);if(hit){selectedPhoto=hit.id;gesture={photo:hit,start:{x:hit.x,y:hit.y},p:a};draw()}return}let t=(e.pointerType==='touch'&&stylusSeen&&$('stylus').checked)?'eraser':tool;
 if(t==='text'){resetInput();const label=prompt('Text eingeben:');if(label){page().items.push({type:'text',x:a.x,y:a.y,label,color:page().kind==='checklist'?GREEN:color,font:21});redo=[];changed()}draw();return}
 if(t==='measure'){if(!measureDraft){measureDraft={type:'measure',x1:a.x,y1:a.y,x2:a.x,y2:a.y,offset:-42,label:'…'};measureStage=1}else if(measureStage===2){measureStage=3}draw();return}
-if(t==='window'||t==='door'){let hit=nearestWall(a);if(!hit){saveState='Wand antippen';status();return}a=hit.point;let w=hit.wall;active={type:t,x1:a.x,y1:a.y,x2:a.x,y2:a.y,wallId:w.id||null,wallAxis:{dx:w.x2-w.x1,dy:w.y2-w.y1},wallSide:hit.side,color:GREEN,width:2};draw();return}
-if(t==='wall'&&wallEnd)a={...wallEnd};active={type:t,id:uid(),color:page().kind==='checklist'&&t==='pen'?GREEN:t==='wall'?BLUE:t==='measure'?RED:color,width:t==='eraser'?eraserSize:width,...(['pen','eraser'].includes(t)?{points:[a]}:{x1:a.x,y1:a.y,x2:a.x,y2:a.y})};if(t==='eraser'){eraserCursor=p;if(e.pointerType==='touch')active.points[0].x-=10/view.z}draw()}
+if(t==='window'||t==='door'){let hit=nearestWall(a);if(!hit){saveState='Wand antippen';status();return}a=hit.point;let w=hit.wall;active={type:t,x1:a.x,y1:a.y,x2:a.x,y2:a.y,wallId:w.id||null,wallAxis:{dx:w.x2-w.x1,dy:w.y2-w.y1},wallSide:hit.side,wallOffset:w.wallOffset??20,color:GREEN,width:2};draw();return}
+if(t==='wall'&&wallEnd)a={...wallEnd};active={type:t,id:uid(),...(t==='wall'?{wallOffset:-20}:{}),color:page().kind==='checklist'&&t==='pen'?GREEN:t==='wall'?BLUE:t==='measure'?RED:color,width:t==='eraser'?eraserSize:width,...(['pen','eraser'].includes(t)?{points:[a]}:{x1:a.x,y1:a.y,x2:a.x,y2:a.y})};if(t==='eraser'){eraserCursor=p;if(e.pointerType==='touch')active.points[0].x-=10/view.z}draw()}
 function move(e){if(!pointers.has(e.pointerId))return;e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(pointers.size===2&&gesture&&!gesture.pan&&!gesture.photo){let ps=[...pointers.values()],dist=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),center={x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2};view.z=Math.max(.15,Math.min(8,gesture.z*dist/Math.max(1,gesture.distance)));view.x=center.x-gesture.anchor.x*view.z;view.y=center.y-gesture.anchor.y*view.z;draw();return}if(gesture?.pan){view.x=gesture.start.x+p.x-gesture.p.x;view.y=gesture.start.y+p.y-gesture.p.y;draw();return}if(gesture?.photo){let a=world(p.x,p.y);gesture.photo.x=gesture.start.x+a.x-gesture.p.x;gesture.photo.y=gesture.start.y+a.y-gesture.p.y;draw();return}if(tool==='measure'&&measureDraft&&(measureStage===1||measureStage===3)){let a=world(p.x,p.y);if(measureStage===1){measureDraft.x2=a.x;measureDraft.y2=a.y}else{let dx=measureDraft.x2-measureDraft.x1,dy=measureDraft.y2-measureDraft.y1,L=Math.hypot(dx,dy)||1;measureDraft.offset=((a.x-measureDraft.x1)*(-dy)+(a.y-measureDraft.y1)*dx)/L}draw();return}if(!active)return;let events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];for(let ev of events){let ep=eventPoint(ev),a=world(ep.x,ep.y);if(active.points){if(active.type==='eraser'&&e.pointerType==='touch')a.x-=10/view.z;let last=active.points.at(-1);if(Math.hypot(last.x-a.x,last.y-a.y)>.45)active.points.push(a)}else{if(active.type==='wall')a=snap({x:active.x1,y:active.y1},a);if(['window','door'].includes(active.type)){let axis=active.wallAxis,len=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/len,uy=axis.dy/len,d=(a.x-active.x1)*ux+(a.y-active.y1)*uy;active.x2=active.x1+ux*d;active.y2=active.y1+uy*d;active.swing=Math.sign(d)||1;active.swingSide=active.wallSide===0?1:-1}else{active.x2=a.x;active.y2=a.y}}}if(active.type==='eraser')eraserCursor=p;draw()}
 function up(e){if(!pointers.has(e.pointerId))return;e.preventDefault();pointers.delete(e.pointerId);if(gesture){if(gesture.photo)changed();if(pointers.size<2)gesture=null;draw();return}if(tool==='measure'&&measureDraft){if(measureStage===1){if(Math.hypot(measureDraft.x2-measureDraft.x1,measureDraft.y2-measureDraft.y1)>3)measureStage=2;else{measureDraft=null;measureStage=0}}else if(measureStage===3){numberDialog({...measureDraft});return}draw();return}if(active){if(active.points?.length||Math.hypot(active.x2-active.x1,active.y2-active.y1)>2){if(active.type==='wall'){wallEnd={x:active.x2,y:active.y2};$('finishwall').hidden=false}page().items.push(active);redo=[];changed()}active=null;eraserCursor=null;draw()}}
 function cancel(e){pointers.delete(e.pointerId);active=null;gesture=null;eraserCursor=null;draw()}
 function download(name,blob){let a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),5000)}
 const safeName=()=>doc.name.replace(/[^a-z0-9äöüß _-]/gi,'_');
 function pageBounds(p){let b=bounds(p);if(b)return{x:0,y:0,w:b.w,h:b.h};let pts=p.items.flatMap(i=>i.points|| (i.type==='image'?[{x:i.x,y:i.y},{x:i.x+i.w,y:i.y+i.h}]:i.type==='text'?[{x:i.x,y:i.y}]:[{x:i.x1,y:i.y1},{x:i.x2,y:i.y2}]));if(!pts.length)pts=[{x:0,y:0},{x:800,y:1100}];let xs=pts.map(v=>v.x).filter(Number.isFinite),ys=pts.map(v=>v.y).filter(Number.isFinite);return{x:Math.min(...xs)-70,y:Math.min(...ys)-90,w:Math.max(400,Math.max(...xs)-Math.min(...xs)+140),h:Math.max(500,Math.max(...ys)-Math.min(...ys)+180)}}
-function exportPage(p){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(3,7000/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active;ctx=c;active=null;if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i);drawWallJoins(p);ctx=old;active=oldActive;return out}
+function exportPage(p){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(3,7000/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active;ctx=c;active=null;if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i);ctx=old;active=oldActive;return out}
 function printPdf(){
  const pages=doc.pages.map(p=>({p,bb:pageBounds(p),src:exportPage(p).toDataURL('image/png')}));
  const win=window.open('','_blank');if(!win){alert('Bitte Pop-ups für den PDF-Export erlauben.');return}

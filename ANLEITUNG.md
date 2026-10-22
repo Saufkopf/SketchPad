@@ -1,4 +1,4 @@
-# SketchPad 1.3.2 – Testversion
+# SketchPad 1.3.3 – Testversion
 
 Bitte die enthaltenen Dateien in das GitHub-Repository hochladen und bestehende Dateien ersetzen. Danach App vollständig schließen und neu öffnen; ggf. Seite neu laden. Bestehende Projekte vorher als JSON sichern.
 
