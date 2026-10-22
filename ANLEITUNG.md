@@ -1,27 +1,31 @@
-# SketchPad 1.2 – Installation und Test
+# SketchPad 1.3 – Zwischenversion zum Testen
 
-## Vor dem Update
-1. In der bisherigen App über **⋮ → Projekt sichern (.json)** alle wichtigen Projekte einzeln exportieren. Das ist besonders wichtig, weil die App noch eine Testversion ist.
-2. Dieses ZIP entpacken. Die Dateien direkt im Hauptverzeichnis des GitHub-Repositorys `SketchPad` ersetzen (nicht den ZIP-Ordner hochladen). In GitHub **Commit changes** wählen.
-3. Auf dem Tablet `https://saufkopf.github.io/SketchPad/` neu öffnen. Bei einer älteren Ansicht Chrome neu starten und die Seite neu laden. Die Service-Worker-Version wurde geändert.
+Diese Version baut auf SketchPad 1.2 auf. Es handelt sich um eine **Teilumsetzung** der besprochenen Version 1.3, nicht um eine fertige CAD- oder PDF-Lösung.
 
-## Bedienung
-- **Wand:** Stift entlang der gewünschten Wandkante ziehen. Die zweite blaue Linie entsteht auf der anderen Seite. Stift heben und vom aktiven Endpunkt aus weiterzeichnen. **✓ Wand fertig** beendet den Wandzug.
-- **Fenster / Tür:** Werkzeug wählen, bestehende Wand antippen und entlang der Wand ziehen. Grüne Vorschau wird beim Loslassen übernommen. Die Darstellung ist eine frühe Testfunktion: Die blauen Wandlinien werden an der Öffnung derzeit noch nicht automatisch ausgeschnitten.
-- **Maß:** ersten Punkt antippen, zweiten Punkt antippen, anschließend auf die gewünschte Position der Maßlinie tippen. Im Zahlenfeld die Maßzahl eingeben und übernehmen. Die rote Maßzahl steht oberhalb der Linie.
-- **Radierer:** Durchmesser im unteren Feld einstellen. Während des Radierens erscheint ein roter Kreis zur Orientierung. Die aktuelle Radierfunktion zeichnet weiß über vorhandene Striche; echtes objektbasiertes Löschen ist noch nicht implementiert.
-- **Text:** Werkzeug wählen, auf Zeichenfläche tippen, Text eingeben und mit OK bestätigen. Nach dem Dialog sollten andere Werkzeuge sofort wieder funktionieren.
-- **Foto:** **📷 Aufnehmen** öffnet auf unterstützten Android-Browsern die Kameraauswahl; **▧ Galerie** wählt eine vorhandene Datei. Kameraunterstützung ist geräte-/browserabhängig und muss am Samsung Tablet geprüft werden. Ein eingefügtes Foto mit dem Foto-Werkzeug auswählen, dann das Schlosssymbol verwenden.
-- **Checkliste:** Unten im Dropdown Küche, Diele, Schlafzimmer oder Bad wählen. Die Vorlagen sind handschriftlich ausfüllbar.
-- **Seiten:** **＋ Seite** fügt hinzu; **🗑 Seite** löscht die aktuelle Seite nach Rückfrage.
-- **Zoom:** Zwei Finger auf der Zeichenfläche. Bei erkanntem S Pen kann ein Finger radieren.
+## Änderungen
+- Zusätzliche feine Stiftstärken ab 0,25 (relative Zeichenbreite; keine Millimeter).
+- Radiercursor beim Finger 10 Bildschirmpixel links vom Berührungspunkt; Radierlinie ebenfalls versetzt.
+- Rechteckwerkzeug in der linken Werkzeugleiste ergänzt.
+- Standardfarbe Blau, Checklisten-Handschrift Grün.
+- Fenster können nun an beiden parallelen Wandkanten eingerastet werden. Fensterbank erhält seitliche Überstände.
+- Türbogen als Viertelkreis überarbeitet (Anschlag und Richtung bitte testen).
+- Mittlere Maustaste verschiebt die Zeichenfläche auf dem Desktop.
+- Kamera-Button als direktes Dateieingabe-Label für Android umgesetzt; tatsächliche Kameraauswahl hängt von Chrome und Android ab.
+- Druckvorschau versucht pro Zeichnung eine große inhaltsabhängige Seitengröße und für Checklisten A4. **Achtung:** Android-/Browser-Druckdialoge können das auf A4 umstellen; Linien werden noch als hochauflösendes Rasterbild ausgegeben, nicht als echte PDF-Vektoren.
+- Offline-Cache-Versionsnummer aktualisiert.
 
-## Datensicherheit
-Änderungen werden automatisch lokal in IndexedDB gespeichert (mit kurzer Verzögerung). Zusätzlich versucht die App bei Hintergrundwechsel zu speichern und prüft alle zwei Minuten. Browserdaten können gelöscht werden; darum wichtige Projekte zusätzlich als JSON sichern. Das PDF wird über den Druckdialog erstellt.
+## Noch offen
+- Fenster- und Türöffnungen schneiden die Wand noch nicht aus; exakte Geometrie nach DXF ist noch nicht umgesetzt.
+- Geschlossene Wand-Eckverbindungen, Maßbearbeitung per Ziehen und rosa Eingabepunkt.
+- Fotogrößen-Anfasspunkte, automatische Verriegelung, mehrzeiliger verschiebbarer Text.
+- Vektor-PDF mit zuverlässig gemischten individuellen Seitengrößen.
+- Echte Objekt-Radierfunktion ohne Weißübermalen.
 
-## Bekannte Einschränkungen
-- Fenster und Türen schneiden die blaue Wand noch nicht geometrisch aus.
-- Fensterbank/Türanschlag sind vereinfachte Zeichnungen.
-- Radierer übermalt weiß statt Objekte zu entfernen; auf Fotos kann das störend sein.
-- Die Handschrifterkennung für Maße ist nicht eingebaut (Zahlenfeld vorhanden).
-- Ein umfassender Android-Hardwaretest wurde noch nicht durchgeführt.
+## Installation / Schutz deiner Daten
+1. **Vor dem Update** in der bisherigen App über „Projekt sichern (.json)“ eine Sicherung exportieren.
+2. ZIP entpacken und alle Dateien direkt im GitHub-Repository `Saufkopf/SketchPad` hochladen, vorhandene Dateien ersetzen.
+3. GitHub Pages auf `main` und `/(root)` belassen.
+4. Auf dem Tablet die App schließen und erneut starten; falls die alte Version angezeigt wird, die Webseite im Chrome-Tab neu laden.
+5. Zuerst ein Testprojekt anlegen und Stift, Kamera, Fenster, Tür, PDF-Vorschau testen. Wichtige Aufmaße zusätzlich als JSON sichern.
+
+Die Zeichnungen werden lokal im Browser gespeichert. Browserdaten löschen kann diese Daten entfernen.
