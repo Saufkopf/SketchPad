@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id),canvas=$('canvas');let ctx=canvas.getCon
 const GREEN='#168b55';
 const MM=3.7795275591,SIZES={a4p:[210,297],a4l:[297,210],a3p:[297,420],a3l:[420,297]},BLUE='#2454d9',RED='#d71920';
 const uid=()=>crypto.randomUUID(),makePage=(name='Seite 1',paper='infinite',kind='drawing')=>({id:uid(),name,paper,grid:kind==='drawing',kind,items:[]});
-let doc={id:uid(),name:'Neue Skizze',pages:[makePage()]},pageIndex=0,tool='pen',color='#2454d9',width=3,redo=[],view={x:0,y:0,z:1},active=null,pointers=new Map(),gesture=null,stylusSeen=false,saveTimer,dirty=false,saveRunning=false,saveAgain=false,saveState='Bereit',selectedPhoto=null,revision=0,eraserSize=28,eraserCursor=null,wallEnd=null,measureDraft=null,measureStage=0;
+let doc={id:uid(),name:'Neue Skizze',pages:[makePage()]},pageIndex=0,tool='pen',color='#2454d9',width=1,redo=[],view={x:0,y:0,z:1},active=null,pointers=new Map(),gesture=null,stylusSeen=false,saveTimer,dirty=false,saveRunning=false,saveAgain=false,saveState='Bereit',selectedPhoto=null,revision=0,eraserSize=28,eraserCursor=null,wallEnd=null,measureDraft=null,measureStage=0;
 const page=()=>doc.pages[pageIndex],imageCache=new Map();
 const dbPromise=new Promise((resolve,reject)=>{let r=indexedDB.open('sketchpad-v1',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('docs'))r.result.createObjectStore('docs',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
 async function store(mode='readonly'){return(await dbPromise).transaction('docs',mode).objectStore('docs')}
@@ -21,90 +21,85 @@ function path(item){let p=item.points||[];if(['pen','eraser'].includes(item.type
 function drawItem(item){ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=item.color||color;ctx.lineWidth=item.width||3;
 if(item.type==='image'){let img=imageCache.get(item.src);if(!img){img=new Image();img.onload=draw;img.src=item.src;imageCache.set(item.src,img)}if(img.complete&&img.naturalWidth){ctx.translate(item.x,item.y);ctx.rotate(item.angle||0);ctx.drawImage(img,0,0,item.w,item.h);if(item.id===selectedPhoto){ctx.strokeStyle='#19a2b5';ctx.lineWidth=2/view.z;ctx.strokeRect(0,0,item.w,item.h)}}ctx.restore();return}
 if(item.type==='text'){ctx.fillStyle=item.color||color;ctx.font=`${item.font||21}px sans-serif`;ctx.fillText(item.label||'',item.x,item.y);ctx.restore();return}
-if(item.type==='measure'){let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,off=Number(item.offset??-42),ext=7;ctx.strokeStyle=RED;ctx.lineWidth=1.5;ctx.beginPath();for(let pt of [{x:item.x1,y:item.y1},{x:item.x2,y:item.y2}]){ctx.moveTo(pt.x-nx*3,pt.y-ny*3);ctx.lineTo(pt.x+nx*(off+Math.sign(off||1)*ext),pt.y+ny*(off+Math.sign(off||1)*ext))}let a={x:item.x1+nx*off,y:item.y1+ny*off},b={x:item.x2+nx*off,y:item.y2+ny*off};ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);for(let q of[a,b]){ctx.moveTo(q.x-ux*5-nx*5,q.y-uy*5-ny*5);ctx.lineTo(q.x+ux*5+nx*5,q.y+uy*5+ny*5)}ctx.stroke();let mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.translate(mid.x,mid.y);let angle=Math.atan2(dy,dx);if(angle>Math.PI/2||angle< -Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font='17px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';let t=item.label||'…';let tw=ctx.measureText(t).width;ctx.fillStyle='white';ctx.fillRect(-tw/2-5,-25,tw+10,22);ctx.fillStyle=RED;ctx.fillText(t,0,-5);ctx.restore();return}
+if(item.type==='measure'){let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,ux=dx/L,uy=dy/L,off=Number(item.offset??-42),ext=7;ctx.strokeStyle=RED;ctx.lineWidth=1.5;ctx.beginPath();for(let pt of [{x:item.x1,y:item.y1},{x:item.x2,y:item.y2}]){ctx.moveTo(pt.x-nx*3,pt.y-ny*3);ctx.lineTo(pt.x+nx*(off+Math.sign(off||1)*ext),pt.y+ny*(off+Math.sign(off||1)*ext))}let a={x:item.x1+nx*off,y:item.y1+ny*off},b={x:item.x2+nx*off,y:item.y2+ny*off};ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);for(let q of[a,b]){ctx.moveTo(q.x-ux*5-nx*5,q.y-uy*5-ny*5);ctx.lineTo(q.x+ux*5+nx*5,q.y+uy*5+ny*5)}ctx.stroke();let mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.translate(mid.x,mid.y);let angle=Math.atan2(dy,dx);if(angle>Math.PI/2||angle< -Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font='17px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';let t=item.label||'…';let tw=ctx.measureText(t).width;ctx.fillStyle='white';ctx.fillRect(-tw/2-5,-25,tw+10,22);ctx.fillStyle=RED;ctx.fillText(t,0,-5);ctx.restore();return}
 if(item.type==='wall'){
- const a={x:item.x1,y:item.y1},b={x:item.x2,y:item.y2},dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
- const offset=item.wallOffset??20;
+ const a={x:item.x1,y:item.y1},b={x:item.x2,y:item.y2},dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,nx=-uy,ny=ux,offset=item.wallOffset??-20;
  const walls=page().items.filter(i=>i.type==='wall');
  const index=walls.indexOf(item),previous=index>0?walls[index-1]:null,next=index>=0?walls[index+1]:null;
- const lineIntersection=(p,v,q,w)=>{let det=v.x*w.y-v.y*w.x;if(Math.abs(det)<1e-5)return null;let t=((q.x-p.x)*w.y-(q.y-p.y)*w.x)/det;return{x:p.x+t*v.x,y:p.y+t*v.y}};
- const endpoint=(other,atStart)=>{
-  if(!other)return null;
-  let anchor=atStart?a:b,join=atStart?{x:other.x2,y:other.y2}:{x:other.x1,y:other.y1};
-  if(Math.hypot(anchor.x-join.x,anchor.y-join.y)>1.5)return null;
-  let odx=other.x2-other.x1,ody=other.y2-other.y1,ol=Math.hypot(odx,ody)||1;
-  let oo=other.wallOffset??20;
-  let q={x:join.x-ody/ol*oo,y:join.y+odx/ol*oo};
-  let pt={x:anchor.x+nx*offset,y:anchor.y+ny*offset};
-  let hit=lineIntersection(pt,{x:ux,y:uy},q,{x:odx/ol,y:ody/ol});
-  return hit&&Math.hypot(hit.x-anchor.x,hit.y-anchor.y)<Math.abs(offset)*6?hit:null;
+ const connected=(other,start)=>other&&Math.hypot((start?other.x2:other.x1)-(start?a.x:b.x),(start?other.y2:other.y1)-(start?a.y:b.y))<1.5;
+ const intersection=(other,start)=>{
+  if(!connected(other,start))return null;
+  const odx=other.x2-other.x1,ody=other.y2-other.y1,ol=Math.hypot(odx,ody)||1,ox=odx/ol,oy=ody/ol,oo=other.wallOffset??-20;
+  const anchor=start?a:b,pt={x:anchor.x+nx*offset,y:anchor.y+ny*offset};
+  const q={x:anchor.x-oy*oo,y:anchor.y+ox*oo};
+  const det=ux*oy-uy*ox;if(Math.abs(det)<.08)return null;
+  const t=((q.x-pt.x)*oy-(q.y-pt.y)*ox)/det;
+  const hit={x:pt.x+t*ux,y:pt.y+t*uy};
+  return Math.hypot(hit.x-anchor.x,hit.y-anchor.y)<=Math.abs(offset)*3?hit:null;
  };
- const startJoin=endpoint(previous,true),endJoin=endpoint(next,false);
+ const startJoin=intersection(previous,true),endJoin=intersection(next,false);
  const openings=page().items.filter(o=>(o.type==='window'||o.type==='door')&&o.wallId===item.id);
- ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;ctx.lineCap='butt';ctx.lineJoin='miter';
+ ctx.strokeStyle=BLUE;ctx.lineWidth=1.15;ctx.lineCap='butt';ctx.lineJoin='miter';
  for(const side of [0,offset]){
   const cuts=openings.map(o=>{let t1=(o.x1-a.x)*ux+(o.y1-a.y)*uy,t2=(o.x2-a.x)*ux+(o.y2-a.y)*uy;return[Math.max(0,Math.min(t1,t2)),Math.min(L,Math.max(t1,t2))]}).filter(q=>q[1]>q[0]).sort((a,b)=>a[0]-b[0]);
   const at=t=>({x:a.x+ux*t+nx*side,y:a.y+uy*t+ny*side});
-  const drawPart=(lo,hi)=>{if(hi-lo<.01)return;let p=at(lo),q=at(hi);if(side===offset&&lo===0&&startJoin)p=startJoin;if(side===offset&&hi===L&&endJoin)q=endJoin;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y)};
+  const drawPart=(lo,hi)=>{if(hi-lo<.01)return;let p=at(lo),q=at(hi);if(side===offset&&lo===0&&startJoin)p=startJoin;if(side===offset&&Math.abs(hi-L)<.01&&endJoin)q=endJoin;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y)};
   let cursor=0;ctx.beginPath();for(const [lo,hi] of cuts){drawPart(cursor,lo);cursor=Math.max(cursor,hi)}drawPart(cursor,L);ctx.stroke();
  }
- // Close free wall ends, but never cap a joined continuation.
- ctx.beginPath();if(!previous||Math.hypot(previous.x2-a.x,previous.y2-a.y)>1.5){ctx.moveTo(a.x,a.y);ctx.lineTo(a.x+nx*offset,a.y+ny*offset)}
- if(!next||Math.hypot(next.x1-b.x,next.y1-b.y)>1.5){ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*offset,b.y+ny*offset)}ctx.stroke();
- ctx.restore();return;
+ // Explicitly connect both offset ends at corners; avoid overlapping connector strokes.
+ ctx.beginPath();
+ if(connected(previous,true)){
+  if(!startJoin){let q={x:a.x+nx*offset,y:a.y+ny*offset};ctx.moveTo(q.x,q.y);let odx=previous.x2-previous.x1,ody=previous.y2-previous.y1,ol=Math.hypot(odx,ody)||1,oo=previous.wallOffset??-20;ctx.lineTo(a.x-ody/ol*oo,a.y+odx/ol*oo)}
+ }else{ctx.moveTo(a.x,a.y);ctx.lineTo(a.x+nx*offset,a.y+ny*offset)}
+ if(connected(next,false)){
+  if(!endJoin){let q={x:b.x+nx*offset,y:b.y+ny*offset};ctx.moveTo(q.x,q.y);let odx=next.x2-next.x1,ody=next.y2-next.y1,ol=Math.hypot(odx,ody)||1,oo=next.wallOffset??-20;ctx.lineTo(b.x-ody/ol*oo,b.y+odx/ol*oo)}
+ }else{ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*offset,b.y+ny*offset)}
+ ctx.stroke();ctx.restore();return;
 }
 if(item.type==='window'||item.type==='door'){
- // DXF "Fenster Türen.dxf": original wall thickness 200 drawing units.
- // Local X follows the user's drag; local Y points from the selected edge INTO the wall.
- // The geometry is scaled to the actual SketchPad wall thickness, not drawn to scale.
+ // The attached DXF has a 200-unit wall, an 1100-unit window and
+ // a 990-unit door. Transform those relative proportions into the
+ // user's freely sketched width and wall thickness.
  const axis=item.wallAxis||{dx:item.x2-item.x1,dy:item.y2-item.y1};
- const axisLength=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/axisLength,uy=axis.dy/axisLength;
- const nx=-uy,ny=ux,off=item.wallOffset??20,side=item.wallSide??0;
- const inside=side===0?Math.sign(off)||1:-Math.sign(off)||-1;
- const signedLength=(item.x2-item.x1)*ux+(item.y2-item.y1)*uy;
- const direction=Math.sign(signedLength)||1,length=Math.abs(signedLength);
- const thickness=Math.abs(off),scale=thickness/200;
- // Position along the wall is always the same as the user's drag direction.
- const pt=(x,y)=>({x:item.x1+ux*direction*x+nx*inside*y,y:item.y1+uy*direction*x+ny*inside*y});
- const seg=(x1,y1,x2,y2)=>{let a=pt(x1,y1),b=pt(x2,y2);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)};
+ const al=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/al,uy=axis.dy/al,nx=-uy,ny=ux;
+ const off=item.wallOffset??-20,side=item.wallSide??0;
+ const inside=side===0?(Math.sign(off)||-1):-(Math.sign(off)||-1);
+ const signed=(item.x2-item.x1)*ux+(item.y2-item.y1)*uy;
+ const dir=Math.sign(signed)||1,length=Math.abs(signed),thickness=Math.abs(off);
+ // x=0 is always the pen-down point (hinge side for doors).
+ // y=0 is the selected wall face, positive y points INTO the wall.
+ const pt=(x,y)=>({x:item.x1+ux*dir*x+nx*inside*y,y:item.y1+uy*dir*x+ny*inside*y});
+ const seg=(x1,y1,x2,y2)=>{const a=pt(x1,y1),b=pt(x2,y2);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)};
  const poly=coords=>{for(let i=1;i<coords.length;i++)seg(...coords[i-1],...coords[i])};
- ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.lineCap='butt';ctx.lineJoin='miter';ctx.beginPath();
+ ctx.strokeStyle=GREEN;ctx.lineWidth=1.05;ctx.lineCap='butt';ctx.lineJoin='miter';ctx.beginPath();
  if(item.type==='window'){
-  // DXF second (right-hand) symbol, coordinates relative to wall edge:
-  // reveal at x=0/width; inner jamb at 30/width-30;
-  // frame 80 units inset, glazing rails at y=70,100,130.
-  // Opening is cut by the wall renderer; draw its actual CAD-style detail here.
-  const u=scale,inner=Math.min(30*u,length*.13),frame=Math.min(80*u,length*.23);
-  const right=length;
-  poly([[0,0],[0,thickness+20*u],[inner,thickness+20*u],[inner,thickness]]);
-  poly([[right,0],[right,thickness+20*u],[right-inner,thickness+20*u],[right-inner,thickness]]);
-  seg(inner,0,inner,thickness);seg(right-inner,0,right-inner,thickness);
-  // The paired glazing bars and rectangular glass stops mirror the DXF window symbol.
-  seg(frame,70*u,right-frame,70*u);
-  seg(frame,100*u,right-frame,100*u);
-  seg(frame,130*u,right-frame,130*u);
-  poly([[inner,70*u],[frame,70*u],[frame,130*u],[inner,130*u]]);
-  poly([[right-inner,70*u],[right-frame,70*u],[right-frame,130*u],[right-inner,130*u]]);
-  // CAD sill on selected wall face, with small overhangs on both ends.
-  seg(-30*u,thickness+20*u,right+30*u,thickness+20*u);
+  // DXF right-hand window: jambs at 30 units, glass at 80 units,
+  // glazing lines at 70/100/130 units across a 200-unit wall.
+  const jamb=Math.min(thickness*.15,length*.10),glass=Math.min(thickness*.40,length*.22);
+  const t=thickness,sill=thickness*.10,overhang=Math.min(thickness*.15,length*.06);
+  // reveal lines terminate exactly on the two blue wall faces.
+  seg(0,0,0,t);seg(length,0,length,t);
+  seg(jamb,0,jamb,t);seg(length-jamb,0,length-jamb,t);
+  for(const yy of [.35,.50,.65])seg(glass,yy*t,length-glass,yy*t);
+  poly([[jamb,.35*t],[glass,.35*t],[glass,.65*t],[jamb,.65*t]]);
+  poly([[length-jamb,.35*t],[length-glass,.35*t],[length-glass,.65*t],[length-jamb,.65*t]]);
+  // Window sill projects from the selected wall face, not the opposite one.
+  seg(-overhang,-sill,length+overhang,-sill);
+  seg(0,-sill,0,0);seg(length,-sill,length,0);
  }else{
-  // DXF first (left-hand) symbol: stepped jambs and a projecting threshold.
-  // The drag chooses the hinge and left/right handedness; selected edge chooses wall face.
-  const u=scale,jamb=Math.min(70*u,length*.18),leafInset=Math.min(55*u,length*.14);
-  poly([[0,0],[0,thickness+20*u],[jamb,thickness+20*u],[jamb,thickness]]);
-  poly([[length,0],[length,thickness+20*u],[length-jamb,thickness+20*u],[length-jamb,thickness]]);
-  seg(jamb,thickness+35*u,length-jamb,thickness+35*u);
-  // Leaf opens 90 degrees OUTSIDE the wall from the selected face.
-  // The original DXF uses a free-form arc; a circular quarter-arc keeps
-  // the swing legible for arbitrary door widths and wall orientations.
-  const hingeX=direction>0?0:length,farX=direction>0?length:0;
-  const hinge=pt(hingeX,-leafInset),tip=pt(hingeX,-leafInset-length);
-  ctx.moveTo(hinge.x,hinge.y);ctx.lineTo(tip.x,tip.y);
-  // Draw arc with explicit sampled points to support mirrored/rotated walls.
-  const n=32;for(let i=0;i<=n;i++){
-   const theta=i/n*Math.PI/2;
-   const x=hingeX+(farX-hingeX)*Math.cos(theta),y=-leafInset-length*Math.sin(theta);
-   const q=pt(x,y);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);
+  // DXF left-hand door: a stepped reveal and a 90 degree leaf/arc.
+  // The drag starting point ALWAYS selects the hinge. Reversing the
+  // drag reverses the handedness; the selected wall face mirrors it.
+  const t=thickness,step=Math.min(t*.35,length*.13),lip=t*.10;
+  poly([[0,t],[0,0],[step,0],[step,-lip]]);
+  poly([[length,t],[length,0],[length-step,0],[length-step,-lip]]);
+  // Door leaf perpendicular to the wall, opening toward the selected face.
+  const leaf=length;
+  seg(0,-lip,0,-lip-leaf);
+  // 90-degree arc from the closed leaf position to the open leaf.
+  for(let i=0;i<=32;i++){
+   const theta=i/32*Math.PI/2,q=pt(leaf*Math.cos(theta),-lip-leaf*Math.sin(theta));
+   if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);
   }
  }
  ctx.stroke();ctx.restore();return;
@@ -135,7 +130,7 @@ function numberDialog(item){const dlg=$('numberdialog'),inp=$('numberinput');inp
 function down(e){if($('numberdialog').open)return;if(e.pointerType==='mouse'&&e.button===1){e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:'mouse'});gesture={pan:true,p,start:{...view}};return}e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(e.pointerType==='pen')stylusSeen=true;if(pointers.size===2){active=null;let ps=[...pointers.values()];gesture={distance:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:view.z,center:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}};gesture.anchor=world(gesture.center.x,gesture.center.y);draw();return}if(pointers.size>2)return;if(tool==='pan'){gesture={pan:true,p,start:{...view}};return}let a=world(p.x,p.y);if(tool==='photo'){let hit=photoAt(a);if(hit){selectedPhoto=hit.id;gesture={photo:hit,start:{x:hit.x,y:hit.y},p:a};draw()}return}let t=(e.pointerType==='touch'&&stylusSeen&&$('stylus').checked)?'eraser':tool;
 if(t==='text'){resetInput();const label=prompt('Text eingeben:');if(label){page().items.push({type:'text',x:a.x,y:a.y,label,color:page().kind==='checklist'?GREEN:color,font:21});redo=[];changed()}draw();return}
 if(t==='measure'){if(!measureDraft){measureDraft={type:'measure',x1:a.x,y1:a.y,x2:a.x,y2:a.y,offset:-42,label:'…'};measureStage=1}else if(measureStage===2){measureStage=3}draw();return}
-if(t==='window'||t==='door'){let hit=nearestWall(a);if(!hit){saveState='Wand antippen';status();return}a=hit.point;let w=hit.wall;active={type:t,x1:a.x,y1:a.y,x2:a.x,y2:a.y,wallId:w.id||null,wallAxis:{dx:w.x2-w.x1,dy:w.y2-w.y1},wallSide:hit.side,wallOffset:w.wallOffset??20,color:GREEN,width:2};draw();return}
+if(t==='window'||t==='door'){let hit=nearestWall(a);if(!hit){saveState='Wand antippen';status();return}a=hit.point;let w=hit.wall;active={type:t,x1:a.x,y1:a.y,x2:a.x,y2:a.y,wallId:w.id||null,wallAxis:{dx:w.x2-w.x1,dy:w.y2-w.y1},wallSide:hit.side,wallOffset:w.wallOffset??20,color:GREEN,width:1};draw();return}
 if(t==='wall'&&wallEnd)a={...wallEnd};active={type:t,id:uid(),...(t==='wall'?{wallOffset:-20}:{}),color:page().kind==='checklist'&&t==='pen'?GREEN:t==='wall'?BLUE:t==='measure'?RED:color,width:t==='eraser'?eraserSize:width,...(['pen','eraser'].includes(t)?{points:[a]}:{x1:a.x,y1:a.y,x2:a.x,y2:a.y})};if(t==='eraser'){eraserCursor=p;if(e.pointerType==='touch')active.points[0].x-=10/view.z}draw()}
 function move(e){if(!pointers.has(e.pointerId))return;e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(pointers.size===2&&gesture&&!gesture.pan&&!gesture.photo){let ps=[...pointers.values()],dist=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),center={x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2};view.z=Math.max(.15,Math.min(8,gesture.z*dist/Math.max(1,gesture.distance)));view.x=center.x-gesture.anchor.x*view.z;view.y=center.y-gesture.anchor.y*view.z;draw();return}if(gesture?.pan){view.x=gesture.start.x+p.x-gesture.p.x;view.y=gesture.start.y+p.y-gesture.p.y;draw();return}if(gesture?.photo){let a=world(p.x,p.y);gesture.photo.x=gesture.start.x+a.x-gesture.p.x;gesture.photo.y=gesture.start.y+a.y-gesture.p.y;draw();return}if(tool==='measure'&&measureDraft&&(measureStage===1||measureStage===3)){let a=world(p.x,p.y);if(measureStage===1){measureDraft.x2=a.x;measureDraft.y2=a.y}else{let dx=measureDraft.x2-measureDraft.x1,dy=measureDraft.y2-measureDraft.y1,L=Math.hypot(dx,dy)||1;measureDraft.offset=((a.x-measureDraft.x1)*(-dy)+(a.y-measureDraft.y1)*dx)/L}draw();return}if(!active)return;let events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];for(let ev of events){let ep=eventPoint(ev),a=world(ep.x,ep.y);if(active.points){if(active.type==='eraser'&&e.pointerType==='touch')a.x-=10/view.z;let last=active.points.at(-1);if(Math.hypot(last.x-a.x,last.y-a.y)>.45)active.points.push(a)}else{if(active.type==='wall')a=snap({x:active.x1,y:active.y1},a);if(['window','door'].includes(active.type)){let axis=active.wallAxis,len=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/len,uy=axis.dy/len,d=(a.x-active.x1)*ux+(a.y-active.y1)*uy;active.x2=active.x1+ux*d;active.y2=active.y1+uy*d;active.swing=Math.sign(d)||1;active.swingSide=active.wallSide===0?1:-1}else{active.x2=a.x;active.y2=a.y}}}if(active.type==='eraser')eraserCursor=p;draw()}
 function up(e){if(!pointers.has(e.pointerId))return;e.preventDefault();pointers.delete(e.pointerId);if(gesture){if(gesture.photo)changed();if(pointers.size<2)gesture=null;draw();return}if(tool==='measure'&&measureDraft){if(measureStage===1){if(Math.hypot(measureDraft.x2-measureDraft.x1,measureDraft.y2-measureDraft.y1)>3)measureStage=2;else{measureDraft=null;measureStage=0}}else if(measureStage===3){numberDialog({...measureDraft});return}draw();return}if(active){if(active.points?.length||Math.hypot(active.x2-active.x1,active.y2-active.y1)>2){if(active.type==='wall'){wallEnd={x:active.x2,y:active.y2};$('finishwall').hidden=false}page().items.push(active);redo=[];changed()}active=null;eraserCursor=null;draw()}}

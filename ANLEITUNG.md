@@ -1,16 +1,21 @@
-# SketchPad 1.3.4 – Fenster- und Türdarstellung
-
-Ausgangspunkt: die bestätigte funktionierende Version 1.3.3.
+# SketchPad 1.3.5 – Geometrie- und Linienkorrektur
 
 ## Änderungen
-- Fensterdetails anhand der Liniengeometrie der bereitgestellten DXF (Rahmen, drei Querlinien, Glasleisten, Fensterbank).
-- Türdetails anhand der DXF (gestufte Laibung, Schwelle, Türblatt und Viertelkreisbogen).
-- Positionierung auf beiden Wandseiten und Ziehrichtung bleiben erhalten.
-- Wandwerkzeug und Wandanschlüsse wurden nicht verändert.
-- Neues Offline-Cache-Kennzeichen.
+- Wandlinien von 2,5 auf 1,15 Zeichen-Einheiten reduziert; freie Enden geschlossen.
+- Wand-Eckverbindungen werden an den versetzten Linien berechnet; zusätzliche überlagerte Eckstriche entfallen.
+- Fenster: an der angeklickten Wandseite ausgerichtet, Fensterbank nach außen auf dieser Seite; Fensterdetail anhand der DXF-Proportionen vereinfacht.
+- Türen: Stift-Aufsetzpunkt ist immer die Bandseite. Ziehen nach rechts oder links spiegelt Türblatt und 90-Grad-Bogen; Wahl der gegenüberliegenden Wandlinie spiegelt die Öffnungsseite.
+- Fenster-/Türlinien von 2 auf 1,05 reduziert.
+- Stiftstärke: 0,1 bis 12 in 0,1er-Schritten, Standard 1.
+- Zusätzlich Fehler in der Maßlinien-Darstellung (fehlende Richtungsvariablen) behoben.
 
-## Test
-Eine neue Wand zeichnen, auf beiden Seiten ein Fenster einsetzen, danach Türen in beide Richtungen ziehen. Die grünen CAD-Details sind auf die SketchPad-Wanddicke skaliert. Die geometrische Darstellung ist eine Anpassung der Vorlage, keine 1:1-CAD-Übernahme aller DXF-Elemente.
+## Installation
+ZIP entpacken und alle 7 Dateien im GitHub-Repository `Saufkopf/SketchPad` ersetzen. Änderungen committen. Nach Veröffentlichung SketchPad neu laden; bei Offline-Cache-Problemen Seite erneut laden. Vorher Projekte als JSON sichern.
 
-## Update
-Alle Dateien ins GitHub-Repository hochladen, bestehende ersetzen und Commit bestätigen. Nach Veröffentlichung die App komplett schließen und neu starten. Alte Projekte vorher als JSON sichern.
+## Bitte testen
+1. Wand in L-, U- und Z-Form mit freien Enden und spitzen Winkeln.
+2. Fenster auf der oberen und unteren Wandlinie – Fensterbank muss jeweils auf der angetippten Seite liegen.
+3. Tür auf der oberen Wandlinie nach links und rechts ziehen; dasselbe an der unteren Wandlinie.
+4. Bisheriges Projekt laden, neue Zeichenseite hinzufügen und Stiftstärke 0,1 testen.
+
+**Grenzen:** CAD-Symbole sind proportional an die frei gezeichneten Maße angepasst, keine 1:1-DXF-Blöcke. Noch kein vollständiger Tablet-End-to-End-Test. Alte gespeicherte Tür-/Fensterobjekte können mit der neuen Darstellung anders aussehen.
