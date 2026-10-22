@@ -1,10 +1,7 @@
-# SketchPad 1.3.6 – Geometrie und Maßbearbeitung
+# SketchPad 1.3.7 – Testversion
 
-## Testen
-1. Vor dem Update Projekt als JSON sichern. ZIP entpacken und alle Dateien in GitHub hochladen, Commit abwarten und App vollständig neu laden.
-2. Neue Zeichenseite: Wand mit zwei aufeinanderfolgenden 90°-Ecken zeichnen. Beide blauen Linien müssen geschlossen sein.
-3. Fenster und Türen auf beiden Wandseiten einsetzen; bei Türen beide Ziehrichtungen testen. Die Symbole nutzen jetzt die tatsächlichen Liniensegmente aus der hochgeladenen DXF.
-4. Maßwerkzeug: Erste Ziehbewegung legt Endpunkte fest; zweite Ziehbewegung den Abstand. Maßzahl eingeben. Danach im Maßwerkzeug auf die Endpunkte oder Maßlinie tippen und mit dem Stift verschieben. Rosa Anfasspunkte markieren die Auswahl.
-5. Stiftstärken ab 0,05 verfügbar.
+Änderungen: Dünnere Wand-, Fenster-, Tür- und Maßlinien; zusätzliche Verbindung der versetzten Wandseiten an Ecken; gegenüberliegende Seite der Fenster- und Türöffnungen geschlossen; halbierte Maß-Endüberstände und Schrägstriche; Bemaßung beginnt ohne Abstand; fehlende Maßzahl durch sehr dezente hellrote Markierung ersetzt.
 
-Hinweis: Es handelt sich um eine Testversion. Android-Tablet und komplexe Wandkombinationen müssen noch praktisch getestet werden. Alte Projekte als JSON sichern. PDF-Export ist noch nicht überarbeitet.
+**Test:** Neue Zeichenseite anlegen, mehrere Wandecken und Fenster/Türen an geraden und schrägen Wänden testen. Maße zunächst entlang einer Wand ziehen, dann in einem zweiten Zug wegziehen. Vor Update bestehende Projekte als JSON sichern. ZIP entpacken, Dateien ins GitHub-Pages-Repository hochladen, Änderungen committen, App auf Tablet vollständig neu starten.
+
+**Hinweis:** Die Funktionalität wurde statisch geprüft, nicht auf dem Samsung-Tablet getestet. Die Eckverbindung sollte im Praxistest kontrolliert werden.
