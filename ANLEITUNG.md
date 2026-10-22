@@ -1,7 +1,1 @@
-SketchPad 1.4.2 – Optische Korrekturen
-
-- Maßzahlen ohne weißen Hintergrund, die Maßlinie bleibt sichtbar.
-- Auswahl „Fein…“ setzt den Stift nun wirklich auf 0,5; Regler und Zahlenanzeige folgen.
-- Finger-Radierer 38 Bildschirmpixel links vom Finger, Kreis und tatsächliche Radierlinie deckungsgleich. S Pen bleibt unverändert.
-- Alle Dateien auf GitHub ersetzen und committen. Zum Test: https://saufkopf.github.io/SketchPad/index.html?v=142
-- Projekte vorher als JSON sichern; keine Browserdaten löschen.
+SketchPad 1.4.3: Radierer 60px links vom Finger; Maßdialog mit eigener Tastatur ohne Android-Tastatur; Maßzahl nachträglich durch Antippen mit Maß-Werkzeug ändern; Text mit Text-Werkzeug antippen und bearbeiten. Vor Installation JSON-Sicherung anlegen. Dateien auf GitHub ersetzen, Commit, dann index.html?v=143 öffnen.
