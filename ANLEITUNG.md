@@ -1,37 +1,27 @@
-# SketchPad 1.1 – Installation und Test
+# SketchPad 1.2 – Installation und Test
 
-## Sicheres Update
-
-1. In SketchPad 1.0 zuerst **Projekt exportieren** und die JSON-Datei außerhalb des Browsers aufbewahren.
-2. Die ZIP-Datei entpacken. In GitHub `saufkopf/SketchPad` unter **Code → Add file → Upload files** die Dateien aus dem Paket hochladen (nicht die ZIP-Datei). Vorhandene Dateien ersetzen. `index.html`, `app.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icon.svg` müssen im Repository-Hauptverzeichnis liegen.
-3. **Commit changes**. Nach der Veröffentlichung SketchPad neu öffnen. Gegebenenfalls Seite neu laden oder die installierte App vollständig schließen und neu öffnen, damit die neue Offline-Version geladen wird.
-4. Wenn ein bestehendes Projekt nicht angezeigt wird, unter **☰ → Projekt importieren** die zuvor exportierte JSON-Datei auswählen.
+## Vor dem Update
+1. In der bisherigen App über **⋮ → Projekt sichern (.json)** alle wichtigen Projekte einzeln exportieren. Das ist besonders wichtig, weil die App noch eine Testversion ist.
+2. Dieses ZIP entpacken. Die Dateien direkt im Hauptverzeichnis des GitHub-Repositorys `SketchPad` ersetzen (nicht den ZIP-Ordner hochladen). In GitHub **Commit changes** wählen.
+3. Auf dem Tablet `https://saufkopf.github.io/SketchPad/` neu öffnen. Bei einer älteren Ansicht Chrome neu starten und die Seite neu laden. Die Service-Worker-Version wurde geändert.
 
 ## Bedienung
+- **Wand:** Stift entlang der gewünschten Wandkante ziehen. Die zweite blaue Linie entsteht auf der anderen Seite. Stift heben und vom aktiven Endpunkt aus weiterzeichnen. **✓ Wand fertig** beendet den Wandzug.
+- **Fenster / Tür:** Werkzeug wählen, bestehende Wand antippen und entlang der Wand ziehen. Grüne Vorschau wird beim Loslassen übernommen. Die Darstellung ist eine frühe Testfunktion: Die blauen Wandlinien werden an der Öffnung derzeit noch nicht automatisch ausgeschnitten.
+- **Maß:** ersten Punkt antippen, zweiten Punkt antippen, anschließend auf die gewünschte Position der Maßlinie tippen. Im Zahlenfeld die Maßzahl eingeben und übernehmen. Die rote Maßzahl steht oberhalb der Linie.
+- **Radierer:** Durchmesser im unteren Feld einstellen. Während des Radierens erscheint ein roter Kreis zur Orientierung. Die aktuelle Radierfunktion zeichnet weiß über vorhandene Striche; echtes objektbasiertes Löschen ist noch nicht implementiert.
+- **Text:** Werkzeug wählen, auf Zeichenfläche tippen, Text eingeben und mit OK bestätigen. Nach dem Dialog sollten andere Werkzeuge sofort wieder funktionieren.
+- **Foto:** **📷 Aufnehmen** öffnet auf unterstützten Android-Browsern die Kameraauswahl; **▧ Galerie** wählt eine vorhandene Datei. Kameraunterstützung ist geräte-/browserabhängig und muss am Samsung Tablet geprüft werden. Ein eingefügtes Foto mit dem Foto-Werkzeug auswählen, dann das Schlosssymbol verwenden.
+- **Checkliste:** Unten im Dropdown Küche, Diele, Schlafzimmer oder Bad wählen. Die Vorlagen sind handschriftlich ausfüllbar.
+- **Seiten:** **＋ Seite** fügt hinzu; **🗑 Seite** löscht die aktuelle Seite nach Rückfrage.
+- **Zoom:** Zwei Finger auf der Zeichenfläche. Bei erkanntem S Pen kann ein Finger radieren.
 
-- **✎ Stift:** mit dem Samsung S Pen zeichnen. Die Linien werden mit weichen Kurven dargestellt.
-- **▥ Wand:** Linie ziehen; eine blaue Doppelwand entsteht. Annähernd waagerechte/senkrechte Linien rasten ein.
-- **▤ Fenster / 🚪 Tür:** Start und Ende mit dem Stift ziehen. In Version 1.1 sind es frei platzierbare blaue Symbole, noch kein automatisches Ausschneiden der Wand.
-- **↔ Maß:** zwei Endpunkte durch Ziehen festlegen, Maßzahl eingeben und Abstand (negativ/positiv) festlegen. Rot mit zwei Maßhilfslinien und gleich langen schrägen Endmarken.
-- **📷 Foto:** Kamera/Galerie auswählen; das Bild wird auf 1600, 2560 oder 4000 px längste Seite reduziert. Das Original bleibt außerhalb von SketchPad unverändert. Mit Werkzeug **▧** ein entsperrtes Foto verschieben. Zum Skalieren/Drehen **🔒 Foto doppelt antippen**, Werte eingeben. Einmal antippen sperrt/entsperrt das ausgewählte Foto.
-- **＋ Seite:** weitere Zeichenfläche; **＋ Checkliste:** ausfüllbare Küchen-Checkliste mit S Pen. Kästchen können handschriftlich markiert werden. Das Textwerkzeug **T** ermöglicht Texteingaben.
-- **Finger:** nach Erkennung des S Pen ein Finger = Radierer, zwei Finger = verschieben/zoomen. Wenn Handballenberührungen Probleme machen, bitte melden.
-- **⋮ → Alle Seiten als PDF drucken:** im Druckdialog **Als PDF speichern** wählen. Für Weitergabe per E-Mail PDF als Anhang versenden.
-- **⋮ → Projekt sichern (.json):** alle Seiten und komprimierten Fotos in einer bearbeitbaren Sicherungsdatei. Kann später wieder importiert werden.
+## Datensicherheit
+Änderungen werden automatisch lokal in IndexedDB gespeichert (mit kurzer Verzögerung). Zusätzlich versucht die App bei Hintergrundwechsel zu speichern und prüft alle zwei Minuten. Browserdaten können gelöscht werden; darum wichtige Projekte zusätzlich als JSON sichern. Das PDF wird über den Druckdialog erstellt.
 
-## Speichern und Datensicherheit
-
-- Änderungen werden nach kurzer Pause automatisch in IndexedDB gespeichert; bei ausstehenden Änderungen zusätzlich alle zwei Minuten.
-- Beim Wechsel in den Hintergrund wird eine weitere Speicherung versucht. Android garantiert nicht, dass beim Schließen noch ausreichend Zeit bleibt. Deshalb ist die Speicherung nach jeder Änderung entscheidend.
-- Bei einem Fehler steht **Speichern fehlgeschlagen** in der Statusanzeige. Nicht ohne Sicherung fortfahren.
-- Für wichtige Aufmaße **regelmäßig JSON exportieren**, z. B. nach dem Kundentermin. Browserdaten löschen oder Geräteverlust kann lokale Projekte löschen.
-- Bilder werden komprimiert. Bei Detailaufnahmen 4000 px wählen und wichtige Originalfotos separat behalten. Starke Vergrößerungen können trotz hoher Auflösung pixelig werden.
-
-## Bekannte Einschränkungen dieses Teststands
-
-- Fenster/Türen werden noch nicht automatisch in vorhandene Doppelwände eingeschnitten; sie sind separat positionierbare Symbole.
-- Die Maßlinie wird durch numerische Abstandseingabe positioniert, noch nicht durch einen dritten Stiftzug.
-- Der Radierer zeichnet derzeit weiße Striche über die Zeichnung, er entfernt noch keine Vektorobjekte.
-- Die Fotoauswahl erlaubt Verschieben und numerisches Skalieren/Drehen, noch keine direkten Transformationsgriffe.
-- Die PDF-Erstellung erfolgt über den Android-Druckdialog und muss auf dem Samsung-Tablet getestet werden.
-- Eine Checkliste ist als handschriftliche Vorlagenseite umgesetzt; die Felder sind noch nicht als separate strukturierte Datensätze erfasst.
+## Bekannte Einschränkungen
+- Fenster und Türen schneiden die blaue Wand noch nicht geometrisch aus.
+- Fensterbank/Türanschlag sind vereinfachte Zeichnungen.
+- Radierer übermalt weiß statt Objekte zu entfernen; auf Fotos kann das störend sein.
+- Die Handschrifterkennung für Maße ist nicht eingebaut (Zahlenfeld vorhanden).
+- Ein umfassender Android-Hardwaretest wurde noch nicht durchgeführt.
