@@ -54,24 +54,58 @@ if(item.type==='wall'){
  ctx.restore();return;
 }
 if(item.type==='window'||item.type==='door'){
- let dx=item.x2-item.x1,dy=item.y2-item.y1,L=Math.hypot(dx,dy)||1,axis=item.wallAxis||{dx,dy},axisL=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/axisL,uy=axis.dy/axisL,nx=-uy,ny=ux,side=item.wallSide||0,wallOffset=item.wallOffset??20,otherEdge=side===0?wallOffset:-wallOffset,extent=dx*ux+dy*uy,lo=Math.min(0,extent),hi=Math.max(0,extent);
- const pt=(t,o)=>({x:item.x1+ux*t+nx*o,y:item.y1+uy*t+ny*o});
- const seg=(a,b)=>{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)};
- ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.beginPath();
+ // DXF "Fenster Türen.dxf": original wall thickness 200 drawing units.
+ // Local X follows the user's drag; local Y points from the selected edge INTO the wall.
+ // The geometry is scaled to the actual SketchPad wall thickness, not drawn to scale.
+ const axis=item.wallAxis||{dx:item.x2-item.x1,dy:item.y2-item.y1};
+ const axisLength=Math.hypot(axis.dx,axis.dy)||1,ux=axis.dx/axisLength,uy=axis.dy/axisLength;
+ const nx=-uy,ny=ux,off=item.wallOffset??20,side=item.wallSide??0;
+ const inside=side===0?Math.sign(off)||1:-Math.sign(off)||-1;
+ const signedLength=(item.x2-item.x1)*ux+(item.y2-item.y1)*uy;
+ const direction=Math.sign(signedLength)||1,length=Math.abs(signedLength);
+ const thickness=Math.abs(off),scale=thickness/200;
+ // Position along the wall is always the same as the user's drag direction.
+ const pt=(x,y)=>({x:item.x1+ux*direction*x+nx*inside*y,y:item.y1+uy*direction*x+ny*inside*y});
+ const seg=(x1,y1,x2,y2)=>{let a=pt(x1,y1),b=pt(x2,y2);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)};
+ const poly=coords=>{for(let i=1;i<coords.length;i++)seg(...coords[i-1],...coords[i])};
+ ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.lineCap='butt';ctx.lineJoin='miter';ctx.beginPath();
  if(item.type==='window'){
-  // Frame remains INSIDE wall: near the selected edge, or near the opposite edge.
-  const inner=Math.sign(otherEdge)*6;
-  seg(pt(lo,0),pt(lo,otherEdge));seg(pt(hi,0),pt(hi,otherEdge));
-  seg(pt(lo,inner),pt(hi,inner));seg(pt(lo,inner+Math.sign(otherEdge)*4),pt(hi,inner+Math.sign(otherEdge)*4));
-  // Sill projects outside on the edge selected by the user.
-  const sill=-Math.sign(otherEdge)*5;seg(pt(lo-7,sill),pt(hi+7,sill));
+  // DXF second (right-hand) symbol, coordinates relative to wall edge:
+  // reveal at x=0/width; inner jamb at 30/width-30;
+  // frame 80 units inset, glazing rails at y=70,100,130.
+  // Opening is cut by the wall renderer; draw its actual CAD-style detail here.
+  const u=scale,inner=Math.min(30*u,length*.13),frame=Math.min(80*u,length*.23);
+  const right=length;
+  poly([[0,0],[0,thickness+20*u],[inner,thickness+20*u],[inner,thickness]]);
+  poly([[right,0],[right,thickness+20*u],[right-inner,thickness+20*u],[right-inner,thickness]]);
+  seg(inner,0,inner,thickness);seg(right-inner,0,right-inner,thickness);
+  // The paired glazing bars and rectangular glass stops mirror the DXF window symbol.
+  seg(frame,70*u,right-frame,70*u);
+  seg(frame,100*u,right-frame,100*u);
+  seg(frame,130*u,right-frame,130*u);
+  poly([[inner,70*u],[frame,70*u],[frame,130*u],[inner,130*u]]);
+  poly([[right-inner,70*u],[right-frame,70*u],[right-frame,130*u],[right-inner,130*u]]);
+  // CAD sill on selected wall face, with small overhangs on both ends.
+  seg(-30*u,thickness+20*u,right+30*u,thickness+20*u);
  }else{
-  // Drag direction controls left/right door. Swing is towards the wall side selected.
-  const swing=-Math.sign(otherEdge);
-  const hinge=pt(0,0),tip=pt(0,swing*L);
-  seg(hinge,tip);seg(pt(0,0),pt(0,otherEdge));seg(pt(extent,0),pt(extent,otherEdge));
-  let start=Math.atan2(uy*(extent>=0?1:-1),ux*(extent>=0?1:-1)),end=Math.atan2(ny*swing,nx*swing);
-  ctx.moveTo(pt(extent,0).x,pt(extent,0).y);ctx.arc(hinge.x,hinge.y,L,start,end,(extent>=0?swing<0:swing>0));
+  // DXF first (left-hand) symbol: stepped jambs and a projecting threshold.
+  // The drag chooses the hinge and left/right handedness; selected edge chooses wall face.
+  const u=scale,jamb=Math.min(70*u,length*.18),leafInset=Math.min(55*u,length*.14);
+  poly([[0,0],[0,thickness+20*u],[jamb,thickness+20*u],[jamb,thickness]]);
+  poly([[length,0],[length,thickness+20*u],[length-jamb,thickness+20*u],[length-jamb,thickness]]);
+  seg(jamb,thickness+35*u,length-jamb,thickness+35*u);
+  // Leaf opens 90 degrees OUTSIDE the wall from the selected face.
+  // The original DXF uses a free-form arc; a circular quarter-arc keeps
+  // the swing legible for arbitrary door widths and wall orientations.
+  const hingeX=direction>0?0:length,farX=direction>0?length:0;
+  const hinge=pt(hingeX,-leafInset),tip=pt(hingeX,-leafInset-length);
+  ctx.moveTo(hinge.x,hinge.y);ctx.lineTo(tip.x,tip.y);
+  // Draw arc with explicit sampled points to support mirrored/rotated walls.
+  const n=32;for(let i=0;i<=n;i++){
+   const theta=i/n*Math.PI/2;
+   const x=hingeX+(farX-hingeX)*Math.cos(theta),y=-leafInset-length*Math.sin(theta);
+   const q=pt(x,y);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);
+  }
  }
  ctx.stroke();ctx.restore();return;
 }

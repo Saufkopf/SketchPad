@@ -1,13 +1,16 @@
-# SketchPad 1.3.3 – Testversion
+# SketchPad 1.3.4 – Fenster- und Türdarstellung
 
-Bitte die enthaltenen Dateien in das GitHub-Repository hochladen und bestehende Dateien ersetzen. Danach App vollständig schließen und neu öffnen; ggf. Seite neu laden. Bestehende Projekte vorher als JSON sichern.
+Ausgangspunkt: die bestätigte funktionierende Version 1.3.3.
 
-## Testen
-1. Wand in zwei Segmenten ziehen, anschließend „Wand fertig“.
-2. Fenster auf eine der beiden blauen Wandlinien setzen und entlang der Wand ziehen. Danach die gegenüberliegende Seite testen.
-3. Tür analog testen: rechts und links ziehen, jeweils von beiden Wandkanten.
-4. Maß: von Start bis Ende **ziehen und loslassen**, dann **an der gewünschten Position ziehen und loslassen**, danach Maßzahl eingeben.
-5. Stiftstärke bis 0,25 reduzieren.
+## Änderungen
+- Fensterdetails anhand der Liniengeometrie der bereitgestellten DXF (Rahmen, drei Querlinien, Glasleisten, Fensterbank).
+- Türdetails anhand der DXF (gestufte Laibung, Schwelle, Türblatt und Viertelkreisbogen).
+- Positionierung auf beiden Wandseiten und Ziehrichtung bleiben erhalten.
+- Wandwerkzeug und Wandanschlüsse wurden nicht verändert.
+- Neues Offline-Cache-Kennzeichen.
 
-## Grenzen dieser Testversion
-Wandöffnungen werden an beiden Wandlinien ausgespart; bei älteren gespeicherten Wänden ohne Objekt-ID funktioniert dies nicht zuverlässig. Türanschlag-/Bogenorientierung bitte anhand der CAD-Vorlage prüfen. PDF-Export bleibt browserbasiert und ist noch kein echtes Vektor-PDF. Radierer löscht noch nicht objektbasiert über Fotos. Foto-Resize, Text-Resize und nachträgliches Verschieben von Maßen sind noch offen.
+## Test
+Eine neue Wand zeichnen, auf beiden Seiten ein Fenster einsetzen, danach Türen in beide Richtungen ziehen. Die grünen CAD-Details sind auf die SketchPad-Wanddicke skaliert. Die geometrische Darstellung ist eine Anpassung der Vorlage, keine 1:1-CAD-Übernahme aller DXF-Elemente.
+
+## Update
+Alle Dateien ins GitHub-Repository hochladen, bestehende ersetzen und Commit bestätigen. Nach Veröffentlichung die App komplett schließen und neu starten. Alte Projekte vorher als JSON sichern.
