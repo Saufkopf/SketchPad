@@ -1,19 +1,5 @@
-# SketchPad 1.4.0 – Testversion
+SketchPad 1.4.1 – kleine Bemaßungen bei starkem Zoom
 
-Änderungen gegenüber 1.3.9:
-- Zoomlimit auf 2000 % erweitert (Mausrad und Zwei-Finger-Geste).
-- Maßlinien, Maßhilfslinien, Überstände und Schrägstriche skalieren beim Erstellen mit dem aktuellen Zoom, ebenso wie bisher die Maßzahl. Vorhandene Maße bleiben unverändert.
-- Schnellwahl für Stiftstärke 1, 2, 3, 4, 5; der Feinregler bleibt erhalten.
-- Verbindungslinien an Wandknicken mit runden Enden, um sichtbare Pixel-Lücken bei starkem Zoom zu vermindern.
-- Fenster- und Türwerkzeuge unverändert.
+Fehlerkorrektur: Mindestlänge einer neuen Bemaßung wird nun in Bildschirm-Pixeln geprüft, statt fest in Zeichnungseinheiten. Bei 1500–2000 % lassen sich dadurch auch kurze Maße erzeugen. Auswahlradius bestehender Bemaßungen reduziert, damit neue Maße in engen Details möglich sind.
 
-## Installation
-1. Bestehende Projekte als JSON sichern.
-2. ZIP entpacken, alle sieben Dateien in GitHub hochladen und vorhandene Dateien ersetzen.
-3. Commit changes bestätigen und die Veröffentlichung von GitHub Pages abwarten.
-4. App vollständig schließen und erneut starten. Oben muss SketchPad 1.4.0 stehen.
-
-## Test
-Neue Bemaßungen bei 183 %, 500 % und 1500 % anlegen. Strichstärken und Maßendzeichen vergleichen. Bereits angelegte Maße ändern sich nicht rückwirkend. Wandknicke bei 1500–2000 % prüfen.
-
-Hinweis: Der Wandecken-Fix ist eine Darstellungsverbesserung, keine vollständig neue Wandgeometrie. Falls die Ecken weiter offen bleiben, ist ein weiterer geometrischer Umbau nötig.
+Alle Dateien aus ZIP auf GitHub ersetzen, Commit abwarten. Zum Testen direkt https://saufkopf.github.io/SketchPad/index.html?v=141 öffnen. Projekte vorher als JSON sichern; Browserdaten nicht löschen.
