@@ -1,18 +1,15 @@
-# SketchPad 1.3.8 – Zoom und Maßdarstellung
+# SketchPad 1.3.9 – Wandecken und zoomabhängige Maßzahlen
 
-## Änderungen
-- Startansicht eines Projekts: 100 %, mit Inhalt in der Mitte; Schaltfläche „Ansicht anpassen“ bleibt verfügbar.
-- Maximaler Zoom: 1000 % (Mausrad und Zwei-Finger-Geste).
-- Stiftstärke beim Start: 3; einstellbar von 0,05 bis 8.
-- Neu gezeichnete Wände: 30 statt 20 interne Zeicheneinheiten Wandstärke (+50 %). Bestehende Wände behalten ihre gespeicherte Stärke.
-- Fenster: durchgehende grüne Linie auf der angeklickten Wandseite ergänzt. Türen unverändert.
-- Maßlinien: Endüberstände und 45°-Striche halbiert, Maßzahl kleiner und näher an der Maßlinie. Anfasspunkte bleiben bestehen.
+- Wandecken: Miter-Schnittpunkte der versetzten Wandkante werden pro Wandsegment bestimmt; doppelt gezeichnete Verbindungsstücke entfernt. Bei extrem spitzen Winkeln bleibt eine kurze abgeschrägte Verbindung.
+- Fenster und Türen unverändert.
+- Maßzahlen stehen fast direkt an der Maßlinie.
+- Maßzahlgröße beim Erstellen: bis 183 % wie bisher; darüber proportional kleiner (z. B. bei 366 % halb so groß). Bereits gespeicherte Maßzahlen behalten ihre alte Größe.
+- Zoom bis 1500 % per Mausrad oder Zwei-Finger-Geste.
 
-## Installation
-Projekt zuvor als JSON sichern. ZIP entpacken und alle Dateien im GitHub-Repository hochladen/ersetzen, Commit durchführen, App schließen und neu öffnen. Bei alter Anzeige ggf. Browser-Cache/Service-Worker aktualisieren.
+## Test
+1. Zuerst vorhandene Projekte als JSON sichern.
+2. ZIP entpacken und die enthaltenen Dateien im GitHub-Repository ersetzen, Commit bestätigen.
+3. App schließen und neu öffnen; Kopfzeile muss 1.3.9 zeigen.
+4. Auf einer neuen Seite Wände mit Links- und Rechtsknicken zeichnen und Bemaßung bei 183 %, 400 % und 1000 % vergleichen.
 
-## Größenhinweis
-SketchPad arbeitet frei und nicht maßstäblich. 1000 % entspricht dem Zehnfachen der normalen Ansicht. Wie groß 2 cm am Bildschirm werden, hängt davon ab, wie groß der Raum ursprünglich skizziert wurde. Mit dem Fit-Knopf kann der komplette Grundriss jederzeit eingeblendet werden.
-
-## Prüfung
-JavaScript-Syntax und ZIP-Paket geprüft; keine vollständige Tablet-Laufzeitprüfung.
+Hinweis: Syntax und Paket wurden geprüft, aber kein Praxistest auf dem Samsung-Tablet durchgeführt.
