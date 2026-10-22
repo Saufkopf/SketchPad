@@ -1,13 +1,13 @@
-# SketchPad 1.3.1 – Fehlerkorrektur
+# SketchPad 1.3.2 – Testversion
 
-## Behobener Fehler
-In 1.3 wurde beim Start ein nicht vorhandenes HTML-Element `takephoto` angesprochen. Dadurch brach die JavaScript-Initialisierung ab und die Zeichenwerkzeuge wurden nicht aktiviert. Der ungültige Aufruf wurde entfernt; die Kamera verwendet weiterhin die Schaltfläche `📷 Aufnehmen` mit dem Dateieingabefeld `photocamera`.
+Bitte die enthaltenen Dateien in das GitHub-Repository hochladen und bestehende Dateien ersetzen. Danach App vollständig schließen und neu öffnen; ggf. Seite neu laden. Bestehende Projekte vorher als JSON sichern.
 
-## Aktualisieren
-1. Vorhandene Projekte in der bisherigen App nach Möglichkeit als JSON sichern.
-2. ZIP entpacken und die Dateien direkt in das GitHub-Repository `SketchPad` hochladen, bestehende Dateien ersetzen.
-3. Commit changes klicken und auf die Veröffentlichung warten.
-4. Auf dem Tablet die App vollständig schließen und neu öffnen. Falls noch die alte Fassung erscheint, Browserseite neu laden. Oben muss `SketchPad 1.3.1` stehen.
-5. Stift, Linie, Wand, Radierer, Text und Foto testen.
+## Testen
+1. Wand in zwei Segmenten ziehen, anschließend „Wand fertig“.
+2. Fenster auf eine der beiden blauen Wandlinien setzen und entlang der Wand ziehen. Danach die gegenüberliegende Seite testen.
+3. Tür analog testen: rechts und links ziehen, jeweils von beiden Wandkanten.
+4. Maß: von Start bis Ende **ziehen und loslassen**, dann **an der gewünschten Position ziehen und loslassen**, danach Maßzahl eingeben.
+5. Stiftstärke bis 0,25 reduzieren.
 
-Die Zeichnungen werden lokal im Browser gespeichert. Ein JSON-Export bleibt als zusätzliche Sicherung wichtig. Die neue Fassung wurde statisch geprüft, jedoch nicht auf einem Samsung-Tablet praktisch getestet.
+## Grenzen dieser Testversion
+Wandöffnungen werden an beiden Wandlinien ausgespart; bei älteren gespeicherten Wänden ohne Objekt-ID funktioniert dies nicht zuverlässig. Türanschlag-/Bogenorientierung bitte anhand der CAD-Vorlage prüfen. PDF-Export bleibt browserbasiert und ist noch kein echtes Vektor-PDF. Radierer löscht noch nicht objektbasiert über Fotos. Foto-Resize, Text-Resize und nachträgliches Verschieben von Maßen sind noch offen.
