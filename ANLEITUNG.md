@@ -1,3 +1,14 @@
-# SketchPad 1.4.8
+# SketchPad 1.5.0 – Textbearbeitung
 
-Textwerkzeug: Text einmal antippen. Acht Griffe am Rahmen, mittig ein Stiftsymbol zum Bearbeiten, rechts unten außerhalb ein Skaliergriff, oben mittig ein Drehgriff. Der Drehgriff dreht um die Textmitte und springt beim ersten Berühren nicht. Zum Verschieben den Text selbst ziehen. Vor Update JSON-Backup erstellen.
+Dateien aus dem ZIP im GitHub-Repository ersetzen und Commit bestätigen. Danach `https://saufkopf.github.io/SketchPad/index.html?v=150` öffnen.
+
+- Text antippen: Auswahlrahmen mit acht Griffen.
+- Ecken: Text proportional skalieren.
+- Seitenmitten: Textfeld breiter, schmäler, höher oder niedriger.
+- Drehgriff oberhalb: Drehung um die Textmitte.
+- Stiftsymbol in der Mitte: Text bearbeiten.
+- Text ziehen: verschieben.
+- Textdialog: Schriftgröße, Farbe (10 Standardfarben + eigene), Drehwinkel und Vorschau.
+- Nach dem Speichern bleibt neuer Text ausgewählt.
+
+**Vor dem Update:** Projekt als JSON sichern. Kein Browser-/App-Datenlöschen.
