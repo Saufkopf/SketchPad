@@ -1,1 +1,5 @@
-SketchPad 1.4.4: Formen-Menü (Linie, Rechteck, Quadrat, Kreis, Ellipse, Freiform) und Farbpalette mit acht festen Farben plus dauerhaft gespeicherter eigener Farbe. Vor Update Projekt als JSON sichern. Alle Dateien ins GitHub-Repository hochladen und committen. Danach index.html?v=144 öffnen. Bestehende Projekte bleiben im selben lokalen Speicher.
+# SketchPad 1.4.5 – Standardfarben
+
+11 Farbfelder: Schwarz, Rot, Blau, Grün, Gelb, Orange, Hellblau, Violett, Hellgrün, Weiß und Eigene Farbe. Die eigene Farbe bleibt lokal gespeichert.
+
+Installation: Die sechs App-Dateien auf GitHub ersetzen und committen. Vorher JSON-Sicherung erstellen. Anschließend `index.html?v=145` öffnen.
