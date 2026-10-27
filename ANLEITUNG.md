@@ -1,1 +1,3 @@
-SketchPad 1.4.7 – Textauswahl mit Anfasspunkten. Einmal Text antippen: auswählen. Am Text ziehen: verschieben. Griff rechts unten: skalieren. Griff oberhalb: drehen. Zweimal kurz antippen: Text bearbeiten. Vor Update JSON-Projekt sichern.\n
+# SketchPad 1.4.8
+
+Textwerkzeug: Text einmal antippen. Acht Griffe am Rahmen, mittig ein Stiftsymbol zum Bearbeiten, rechts unten außerhalb ein Skaliergriff, oben mittig ein Drehgriff. Der Drehgriff dreht um die Textmitte und springt beim ersten Berühren nicht. Zum Verschieben den Text selbst ziehen. Vor Update JSON-Backup erstellen.
