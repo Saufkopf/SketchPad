@@ -150,12 +150,12 @@ function numberDialog(item,editing=false){
 function textDialog(item,editing=false){
  const dlg=$('textdialog'),inp=$('textinput'),font=$('textfont'),angle=$('textangle');
  textDialogColor=item.color||textDefaultColor;renderTextColors();
- inp.value=item.label||'';font.value=String(item.font||textDefaultFont);angle.value=String(item.angle||0);updateTextPreview();
+ inp.value=item.label||'';font.value=String(item.font||textDefaultFont);angle.value=String(Math.round(Number(item.angle)||0));$('textfontrange').value=font.value;
  $('texttitle').textContent=editing?'Text ändern':'Text eingeben';dlg.showModal();
  let finished=false;
  const done=ok=>{if(finished)return;finished=true;dlg.close();if(ok){
  item.label=inp.value;item.font=Math.max(6,Math.min(200,Number(font.value)||21));
- item.angle=Number(angle.value)||0;item.color=textDialogColor;
+ item.angle=Math.round(Number(angle.value)||0);item.color=textDialogColor;
  textDefaultFont=item.font;textDefaultColor=item.color;localStorage.setItem('sketchpad-text-font',String(textDefaultFont));localStorage.setItem('sketchpad-text-color',textDefaultColor);
  if(!editing){page().items.push(item);redo=[]}selectedText=item;changed()}resetInput();draw()};
  $('textok').onclick=()=>done(true);$('textcancel').onclick=()=>done(false);
@@ -328,10 +328,10 @@ canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});canv
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));const fixedColors=['#202020','#d93636','#2454d9','#178647','#e6bd24','#f18728','#58b9f5','#8b4cc9','#8edb53','#ffffff'];
 let customColor=localStorage.getItem('sketchpad-custom-color')||'#16a6a0';
 textDefaultFont=Math.max(6,Math.min(200,Number(localStorage.getItem('sketchpad-text-font'))||21));textDefaultColor=localStorage.getItem('sketchpad-text-color')||color;
-function updateTextPreview(){const preview=$('textpreviewvalue');if(!preview)return;const val=$('textinput').value.trim();preview.textContent=val||'Mustertext';preview.style.color=textDialogColor;preview.style.fontSize=Math.max(6,Math.min(48,Number($('textfont').value)||21))+'px'}
-function renderTextColors(){const holder=$('textcolorswatches');holder.replaceChildren();[...fixedColors,customColor].forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.style.background=c;b.title=i===fixedColors.length?'Eigene Farbe':`Textfarbe ${i+1}`;b.setAttribute('aria-label',b.title);b.style.border=c.toLowerCase()===textDialogColor.toLowerCase()?'3px solid #3997ef':'1px solid #8b98a8';b.textContent=c.toLowerCase()===textDialogColor.toLowerCase()?'✓':'';b.style.color=c==='#ffffff'?'#111':'#fff';b.onclick=()=>{textDialogColor=c;renderTextColors();updateTextPreview()};holder.append(b)});$('textcustomcolor').value=customColor}
-$('textfont').addEventListener('input',updateTextPreview);$('textinput').addEventListener('input',updateTextPreview);
-$('textcustomcolor').addEventListener('input',e=>{textDialogColor=e.target.value;customColor=e.target.value;localStorage.setItem('sketchpad-custom-color',customColor);renderTextColors();updateTextPreview()});
+function syncTextFont(source){const num=$('textfont'),range=$('textfontrange');if(source==='range')num.value=range.value;else if(num.value!==''&&Number.isFinite(Number(num.value)))range.value=String(Math.max(6,Math.min(200,Math.round(Number(num.value)))))}
+function renderTextColors(){const holder=$('textcolorswatches');holder.replaceChildren();[...fixedColors,customColor].forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.style.background=c;b.title=i===fixedColors.length?'Eigene Farbe':`Textfarbe ${i+1}`;b.setAttribute('aria-label',b.title);b.style.border=c.toLowerCase()===textDialogColor.toLowerCase()?'3px solid #3997ef':'1px solid #8b98a8';b.textContent=c.toLowerCase()===textDialogColor.toLowerCase()?'✓':'';b.style.color=c==='#ffffff'?'#111':'#fff';b.onclick=()=>{textDialogColor=c;renderTextColors();syncTextFont("number")};holder.append(b)});$('textcustomcolor').value=customColor}
+$('textfont').addEventListener('input',()=>syncTextFont('number'));$('textfontrange').addEventListener('input',()=>syncTextFont('range'));
+$('textcustomcolor').addEventListener('input',e=>{textDialogColor=e.target.value;customColor=e.target.value;localStorage.setItem('sketchpad-custom-color',customColor);renderTextColors();syncTextFont("number")});
 const colorButton=$('colorbutton'), colorDialog=$('colordialog');
 function chooseColor(c){color=c;colorButton.style.background=c;renderColors();colorDialog.close()}
 function renderColors(){const holder=$('colorswatches');holder.replaceChildren();[...fixedColors,customColor].forEach((c,i)=>{let b=document.createElement('button');b.type='button';b.title=i===fixedColors.length?'Eigene Farbe':`Farbe ${i+1}`;b.style.background=c;b.style.border=color.toLowerCase()===c.toLowerCase()?'3px solid #3997ef':'1px solid #8b98a8';b.textContent=color.toLowerCase()===c.toLowerCase()?'✓':'';b.style.color=c==='#ffffff'?'#111':'white';b.onclick=()=>chooseColor(c);holder.append(b)})}
