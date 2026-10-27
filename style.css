@@ -31,3 +31,17 @@ aside button{height:53px;display:flex;flex-direction:column;justify-content:cent
 #textdialog .hint{font-size:11px;line-height:1.25;margin:5px 0 7px}
 #textdialog .dialogactions{position:sticky;bottom:0;background:#fff;padding:7px 0 0;z-index:1}
 @media(max-height:650px){#textdialog{max-height:72dvh}#textdialog .hint{display:none}}
+
+/* v1.5.2: Stift-Einstellungen und vier Speicherplätze */
+#pendialog{width:min(92vw,400px);max-height:82dvh;overflow-y:auto}
+#pendialog>label{display:block;margin:12px 0;font-size:14px}
+#pendialog select{display:block;width:100%;margin-top:6px;padding:9px}
+.penwidthrow{display:flex;align-items:center;gap:10px;margin-top:7px}
+.penwidthrow input[type=number]{width:78px;padding:8px}
+.penwidthrow input[type=range]{flex:1;min-width:90px}
+.penpresets{display:grid;gap:7px;margin:10px 0}
+.penpreset{display:flex;gap:8px;align-items:center}
+.penpresetuse{flex:1;display:flex;gap:9px;align-items:center;text-align:left;min-width:0;padding:9px}
+.penpresetuse span:last-child{font-size:13px}
+.penswatch{width:24px;height:24px;border:1px solid #8292a5;border-radius:50%;flex-shrink:0}
+.penpreset>button:last-child{padding:9px;font-size:12px}
