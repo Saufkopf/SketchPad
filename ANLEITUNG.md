@@ -1,5 +1,3 @@
-# SketchPad 1.4.5 – Standardfarben
+SketchPad 1.4.6 – Textbearbeitung
 
-11 Farbfelder: Schwarz, Rot, Blau, Grün, Gelb, Orange, Hellblau, Violett, Hellgrün, Weiß und Eigene Farbe. Die eigene Farbe bleibt lokal gespeichert.
-
-Installation: Die sechs App-Dateien auf GitHub ersetzen und committen. Vorher JSON-Sicherung erstellen. Anschließend `index.html?v=145` öffnen.
+Textwerkzeug: Tippen auf leere Fläche erstellt Text. Mehrzeilige Eingabe mit Enter. Schriftgröße 6–200 und Drehwinkel in Grad. Bestehenden Text kurz antippen zum Bearbeiten; ziehen zum Verschieben. Alte Texte bleiben kompatibel. Vor dem Update JSON-Sicherung erstellen.
