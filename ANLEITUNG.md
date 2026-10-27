@@ -1,3 +1,1 @@
-SketchPad 1.4.6 – Textbearbeitung
-
-Textwerkzeug: Tippen auf leere Fläche erstellt Text. Mehrzeilige Eingabe mit Enter. Schriftgröße 6–200 und Drehwinkel in Grad. Bestehenden Text kurz antippen zum Bearbeiten; ziehen zum Verschieben. Alte Texte bleiben kompatibel. Vor dem Update JSON-Sicherung erstellen.
+SketchPad 1.4.7 – Textauswahl mit Anfasspunkten. Einmal Text antippen: auswählen. Am Text ziehen: verschieben. Griff rechts unten: skalieren. Griff oberhalb: drehen. Zweimal kurz antippen: Text bearbeiten. Vor Update JSON-Projekt sichern.\n
