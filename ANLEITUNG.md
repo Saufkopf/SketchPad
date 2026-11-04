@@ -1,12 +1,5 @@
-# SketchPad 1.5.2 – Stifte und vier Voreinstellungen
+# SketchPad 1.5.3 – kompaktes Stiftfenster
 
-- Stift aktivieren und nochmals auf „Stift“ tippen: Einstellungsmenü öffnen.
-- Normaler Stift: konstante Breite.
-- Druckstift: S-Pen-Druck verändert die Strichbreite (falls Browser/Gerät Druckwerte liefert). Bei Maus oder Finger wird ein Standarddruck verwendet.
-- Marker: transparenter, dreifach breiter Strich.
-- Vier Plätze: Antippen zum Laden; „Speichern“ sichert aktuelle Farbe, Stiftart und Breite dauerhaft im Browser.
-- Farbe weiterhin über die vorhandene Farbpalette wählen.
-- Stiftstärke über Zahlenfeld/Regler im Menü oder über die bisherigen Regler unten.
-- Die vorhandenen Zeichenwerkzeuge und Projekte bleiben unverändert.
+Das Stiftfenster öffnet als kleines, frei stehendes Fenster neben der Werkzeugleiste. Tippen außerhalb schließt es automatisch. Das Fenster blockiert die Zeichenfläche nicht mehr. Schließen ist auch über × oder Fertig möglich. Stiftarten und vier Voreinstellungen bleiben erhalten.
 
-Vor Installation ein JSON-Backup der Projekte erstellen. Alle App-Dateien im GitHub-Repository ersetzen und committen. Test-Link: https://saufkopf.github.io/SketchPad/index.html?v=152
+ZIP entpacken und Dateien ins GitHub-Repository hochladen. Zum Testen index.html?v=153 öffnen.

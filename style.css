@@ -45,3 +45,22 @@ aside button{height:53px;display:flex;flex-direction:column;justify-content:cent
 .penpresetuse span:last-child{font-size:13px}
 .penswatch{width:24px;height:24px;border:1px solid #8292a5;border-radius:50%;flex-shrink:0}
 .penpreset>button:last-child{padding:9px;font-size:12px}
+
+/* v1.5.3: kleines, nicht modales Stiftfenster wie Squid */
+#pendialog{position:fixed;margin:0;width:min(310px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:min(440px,calc(100dvh - 16px));padding:10px 12px;overflow:auto;border-radius:12px;box-shadow:0 8px 24px #0003}
+#pendialog h3{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+#penx{font-size:21px;line-height:1;border:0;background:transparent;padding:0 5px}
+#pendialog>label{margin:6px 0;font-size:12px}
+#pendialog select{padding:5px;margin-top:3px;font-size:13px}
+#pendialog .penwidthrow{margin-top:3px;gap:7px}
+#pendialog .penwidthrow input[type=number]{width:58px;padding:5px}
+#pendialog .hint{display:none}
+#pendialog strong{font-size:12px}
+#pendialog .penpresets{gap:3px;margin:5px 0}
+#pendialog .penpreset{gap:5px}
+#pendialog .penpresetuse{padding:5px}
+#pendialog .penpresetuse span:last-child{font-size:12px}
+#pendialog .penswatch{width:17px;height:17px}
+#pendialog .penpreset>button:last-child{padding:5px;font-size:11px}
+#pendialog .dialogactions{margin-top:4px}
+#pendialog .dialogactions button{padding:5px 10px;font-size:12px}

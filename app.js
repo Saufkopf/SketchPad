@@ -333,7 +333,7 @@ function addImage(file){if(!file)return;let img=new Image(),url=URL.createObject
 async function showProjects(){let arr=await getAll();arr.sort((a,b)=>a.name.localeCompare(b.name));$('projectlist').replaceChildren();for(let d of arr){let row=document.createElement('div');row.className='project';let open=document.createElement('button');open.textContent=d.name;open.onclick=()=>{load(d.id);$('projectdialog').close()};let del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!confirm(`„${d.name}“ löschen?`))return;let db=await dbPromise;await new Promise((ok,err)=>{let tx=db.transaction('docs','readwrite');tx.objectStore('docs').delete(d.id);tx.oncomplete=ok;tx.onerror=err});row.remove();if(d.id===doc.id)newDoc()};row.append(open,del);$('projectlist').append(row)}$('projectdialog').showModal()}
 function newDoc(){doc={id:uid(),name:'Neue Skizze',pages:[makePage()]};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();changed()}
 canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('wheel',e=>{e.preventDefault();let p=eventPoint(e);zoomAt(e.deltaY<0?1.1:.9,p.x,p.y)},{passive:false});
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{if(b.dataset.tool==='pen'&&tool==='pen'){$('pendialog').showModal();syncPenDialog()}else setTool(b.dataset.tool)});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{if(b.dataset.tool==='pen'&&tool==='pen'){openPenPopup(b);syncPenDialog()}else setTool(b.dataset.tool)});
 const penDefaults=[
  {name:'Blau',type:'normal',width:3,color:'#2454d9'},
  {name:'Rot fein',type:'normal',width:1,color:'#d93636'},
@@ -343,7 +343,18 @@ penType=['normal','pressure','marker'].includes(localStorage.getItem('sketchpad-
 function penSetWidth(v){width=Math.max(.05,Math.min(30,Number(v)||.5));$('width').max='30';$('width').value=String(width);$('widthout').textContent=width.toLocaleString('de-AT');$('widthpreset').value=[1,2,3,4,5].includes(width)?String(width):'';$('penwidthnumber').value=String(width);$('penwidthrange').value=String(width)}
 function syncPenDialog(){$('pentype').value=penType;penSetWidth(width);renderPenPresets()}
 function renderPenPresets(){let root=$('penpresets');root.replaceChildren();penPresets.forEach((preset,i)=>{let wrap=document.createElement('div');wrap.className='penpreset';let use=document.createElement('button');use.type='button';use.className='penpresetuse';use.innerHTML='<span class="penswatch"></span><span></span>';use.querySelector('.penswatch').style.background=preset.color;use.querySelectorAll('span')[1].textContent=`${i+1}. ${preset.name||'Stift'} · ${preset.width}`;use.onclick=()=>{penType=['normal','pressure','marker'].includes(preset.type)?preset.type:'normal';penSetWidth(preset.width);localStorage.setItem('sketchpad-pen-type',penType);color=preset.color;$('colorbutton').style.background=color;setTool('pen');$('pendialog').close()};let save=document.createElement('button');save.type='button';save.textContent='Speichern';save.title=`Aktuellen Stift auf Platz ${i+1} speichern`;save.onclick=()=>{penPresets[i]={name:['Stift 1','Stift 2','Stift 3','Stift 4'][i],type:penType,width,color};localStorage.setItem('sketchpad-pen-presets',JSON.stringify(penPresets));renderPenPresets()};wrap.append(use,save);root.append(wrap)})}
-$('pentype').onchange=e=>{penType=e.target.value;localStorage.setItem('sketchpad-pen-type',penType)};$('penwidthnumber').oninput=e=>{if(e.target.value!=='')penSetWidth(e.target.value)};$('penwidthrange').oninput=e=>penSetWidth(e.target.value);$('penclose').onclick=()=>$('pendialog').close();
+$('pentype').onchange=e=>{penType=e.target.value;localStorage.setItem('sketchpad-pen-type',penType)};$('penwidthnumber').oninput=e=>{if(e.target.value!=='')penSetWidth(e.target.value)};$('penwidthrange').oninput=e=>penSetWidth(e.target.value);$('penclose').onclick=()=>$('pendialog').close();$('penx').onclick=()=>$('pendialog').close();
+function openPenPopup(anchor){
+ const d=$('pendialog'); if(d.open){d.close();return;} d.show();
+ const r=anchor.getBoundingClientRect();
+ const left=Math.min(window.innerWidth-d.offsetWidth-8,Math.max(8,r.right+8));
+ const top=Math.max(8,Math.min(r.top,window.innerHeight-d.offsetHeight-8));
+ d.style.left=left+'px';d.style.top=top+'px';
+}
+document.addEventListener('pointerdown',e=>{
+ const d=$('pendialog');if(d.open&&!d.contains(e.target)&&!e.target.closest('[data-tool="pen"]'))d.close();
+},true);
+window.addEventListener('resize',()=>{if($('pendialog').open)$('pendialog').close()});
 const fixedColors=['#202020','#d93636','#2454d9','#178647','#e6bd24','#f18728','#58b9f5','#8b4cc9','#8edb53','#ffffff'];
 let customColor=localStorage.getItem('sketchpad-custom-color')||'#16a6a0';
 textDefaultFont=Math.max(6,Math.min(200,Number(localStorage.getItem('sketchpad-text-font'))||21));textDefaultColor=localStorage.getItem('sketchpad-text-color')||color;
