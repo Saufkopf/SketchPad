@@ -357,14 +357,11 @@ document.addEventListener('pointerdown',e=>{
 },true);
 window.addEventListener('resize',()=>{if($('pendialog').open)$('pendialog').close()});
 
-const wallButton=document.querySelector('[data-tool="wall"]'),wallFlyout=$('wallflyout');let wallHold=null,wallLong=false;
+const wallButton=$('wallsubmenu'),wallFlyout=$('wallflyout');
 function showWallFlyout(){wallFlyout.hidden=false;const r=wallButton.getBoundingClientRect();wallFlyout.style.top=Math.max(8,r.top)+'px';wallFlyout.style.left=(r.right+7)+'px'}
-wallButton.addEventListener('pointerdown',()=>{wallLong=false;clearTimeout(wallHold);wallHold=setTimeout(()=>{wallLong=true;showWallFlyout()},600)});
-for(const ev of ['pointerup','pointercancel','pointerleave'])wallButton.addEventListener(ev,()=>clearTimeout(wallHold));
-wallButton.addEventListener('click',()=>{if(wallLong){wallLong=false;return}wallFlyout.hidden=true;setTool('wall')});
-$('wallsubmenu').onclick=()=>{if(wallFlyout.hidden)showWallFlyout();else wallFlyout.hidden=true};
+wallButton.onclick=()=>{if(wallFlyout.hidden)showWallFlyout();else wallFlyout.hidden=true};
 document.querySelectorAll('[data-wallchoice]').forEach(b=>b.onclick=()=>{setTool(b.dataset.wallchoice);wallFlyout.hidden=true});
-document.addEventListener('pointerdown',e=>{if(!wallFlyout.hidden&&!wallFlyout.contains(e.target)&&!wallButton.contains(e.target)&&!$('wallsubmenu').contains(e.target))wallFlyout.hidden=true},true);
+document.addEventListener('pointerdown',e=>{if(!wallFlyout.hidden&&!wallFlyout.contains(e.target)&&!wallButton.contains(e.target))wallFlyout.hidden=true},true);
 $('sidecolor').onclick=()=>colorButton.click();
 const fixedColors=['#202020','#d93636','#2454d9','#178647','#e6bd24','#f18728','#58b9f5','#8b4cc9','#8edb53','#ffffff'];
 let customColor=localStorage.getItem('sketchpad-custom-color')||'#16a6a0';
