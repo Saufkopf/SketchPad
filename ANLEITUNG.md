@@ -1,1 +1,1 @@
-SketchPad 1.5.5: Oberes doppeltes Wand-Werkzeug entfernt. Das darunterliegende Wand-Untermenü bleibt und bietet Wand, Fenster und Tür. Bestehende Projekte und Werkzeuge bleiben erhalten.
+SketchPad 1.5.6 – schwebende Schnellfunktionen oben rechts, Projekt-Untermenü links. Projektname im Untermenü änderbar. Bestehende Zeichnungen bleiben in IndexedDB erhalten. Alle Dateien auf GitHub ersetzen und mit index.html?v=156 testen. Vor größeren Änderungen Projekt als JSON sichern.
