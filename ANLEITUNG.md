@@ -1,1 +1,3 @@
-SketchPad 1.6.0: Stiftstärken 1, 2, 4, 8, 10, 20, 40; nur eine Strichprobe; Formen mit gemeinsamer Strichstärke und Farbpalette. Alle Dateien im GitHub-Root ersetzen. Website-Daten nicht löschen.
+# SketchPad 1.6.1
+
+Zoom bis 3000 %, feinere Stiftpunktaufnahme beim Zoomen, geglättete Druck-/Schreibstiftkurven. Stufen 1 und 2 sind feiner (0,5 bzw. 1 Canvas-Einheiten), Stufe 3 mit 3 Einheiten. Bestehende Projekte bleiben im IndexedDB-Speicher erhalten.

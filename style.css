@@ -147,3 +147,6 @@ body{position:relative}
 #shapecolorswatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 #shapecolorswatches button{width:30px;height:30px;border-radius:50%;border:1px solid #8b98a8;justify-self:center;padding:0}
 #shapecolorswatches button.chosen{outline:2px solid #2677bd;outline-offset:2px}
+
+/* v1.6.1 – 8 Größenpositionen */
+.penquickwidths{grid-template-columns:repeat(8,minmax(0,1fr))}
