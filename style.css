@@ -174,3 +174,5 @@ body{position:relative}
 .eraserpreviewwrap{height:110px;display:flex;align-items:center;justify-content:center;margin:9px 0 3px;background:#f4f7fa;border-radius:8px}
 #eraserpreview{width:28px;height:28px;border-radius:50%;background:#b6c3d1;border:1px solid #71869d;box-sizing:border-box}
 .eraserhint{display:block;font-size:11px;color:#64778a;line-height:1.4}
+
+#photoflyout,#pageactions{position:fixed;z-index:110;display:flex;flex-direction:column;gap:4px;padding:7px;background:#fff;border:1px solid #b6c4d3;border-radius:9px;box-shadow:0 5px 18px #0002}#photoflyout[hidden],#pageactions[hidden]{display:none}#photoflyout button,#pageactions button{padding:9px 13px;text-align:left;white-space:nowrap;background:#f5f8fc;border:1px solid #d6e0eb;border-radius:5px}#pagelist button{touch-action:pan-x}
