@@ -128,3 +128,22 @@ body{position:relative}
 #pendialog .penwidthvisual{gap:10px}
 #pendialog .penwidthline{margin:10px 8px 3px}
 #pendialog #penwidthrange{touch-action:pan-x}
+
+/* v1.5.9 – sieben Stiftstärken, exakt synchronisierte Auswahl */
+#pendialog .penquickwidths{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin:6px 0 4px}
+#pendialog .penquickwidths button{font-size:12px;min-height:34px;border-radius:50%;padding:0;justify-self:center;width:32px;height:32px}
+#pendialog .penquickwidths button.chosen{background:#d8eafb;outline:2px solid #2677bd;outline-offset:-2px;color:#075d9c;font-weight:800}
+#pendialog .penwidthvisual{padding:5px 0 8px}
+#pendialog .penwidthline{margin:20px 0 14px;height:2px;overflow:visible}
+#pendialog #penwidthdot{background:#2677bd88;border:1px solid #2677bd;min-width:1px;min-height:1px;max-width:none;max-height:none;pointer-events:none}
+#pendialog #penwidthrange{margin:0;width:100%}
+
+/* v1.6.0 – eine Strichprobe und gemeinsame Formen-Stifteinstellungen */
+.linesample{width:75%;max-width:190px;min-height:1px;max-height:40px;border-radius:20px;margin:12px auto 18px;pointer-events:none}
+#shapequickwidths{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin:12px 0}
+#shapequickwidths button{border:0;background:transparent;border-radius:50%;font-size:13px;width:34px;height:34px;justify-self:center;padding:0}
+#shapequickwidths button.chosen{background:#d8eafb;outline:2px solid #2677bd;outline-offset:-2px;font-weight:800}
+#shapesdialog{max-height:calc(100dvh - 24px);overflow-y:auto;max-width:min(360px,calc(100vw - 16px))}
+#shapecolorswatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+#shapecolorswatches button{width:30px;height:30px;border-radius:50%;border:1px solid #8b98a8;justify-self:center;padding:0}
+#shapecolorswatches button.chosen{outline:2px solid #2677bd;outline-offset:2px}

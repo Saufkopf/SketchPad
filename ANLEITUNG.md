@@ -1,7 +1,1 @@
-SketchPad 1.5.8 – Stiftskala und Versionsanzeige
-
-- Sichtbare Versionsnummer oben rechts während der Entwicklung.
-- Stiftstärke in Punktwerten: 1, 2, 3, 4, 6, 10, 20, 30, 60, 80.
-- Nichtlineare Stiftskala mit feiner Einteilung bei kleinen Strichstärken.
-- Stiftmenü und bisherige Projekte bleiben erhalten.
-- Dateien in das Stammverzeichnis des GitHub-Repositories hochladen.
+SketchPad 1.6.0: Stiftstärken 1, 2, 4, 8, 10, 20, 40; nur eine Strichprobe; Formen mit gemeinsamer Strichstärke und Farbpalette. Alle Dateien im GitHub-Root ersetzen. Website-Daten nicht löschen.
