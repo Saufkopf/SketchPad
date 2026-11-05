@@ -1,1 +1,1 @@
-SketchPad 1.5.6 – schwebende Schnellfunktionen oben rechts, Projekt-Untermenü links. Projektname im Untermenü änderbar. Bestehende Zeichnungen bleiben in IndexedDB erhalten. Alle Dateien auf GitHub ersetzen und mit index.html?v=156 testen. Vor größeren Änderungen Projekt als JSON sichern.
+SketchPad 1.5.7 – Schnellauswahl 1/2/3/4/6/10/20/30/60/80, Skalen vertauscht, 11 synchronisierte Farben im Stiftfenster, Favoriten mit Strichstärke und Farbe, Formenanzeige. Projekt-Datenbank unverändert.
