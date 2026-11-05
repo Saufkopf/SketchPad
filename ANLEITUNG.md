@@ -1,2 +1,5 @@
 SketchPad 1.6.6 – Radierer-Menü und Schreibstiftkorrektur\n\nRadierer antippen: Größe 4–100 über Schnellauswahl, Regler oder Zahl einstellen. Außerhalb tippen schließt das Menü. Größe wird projektübergreifend gespeichert. Schreibstift 1 und 2 mit durchgehenden Rundungen durch angepasste Mindestbreite. Alle übrigen Werkzeuge unverändert.\n
 Version 1.6.7: Seitenreiter lange drücken für Umbenennen/Löschen. Foto-Werkzeug öffnet Aufnahme/Galerie. Kameraaufnahme über direkt betätigten Datei-Aufnahmedialog.
+
+
+Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTTPS erforderlich), Foto aufnehmen und in die Zeichnung einfügen. Fallback auf Android-Kameraauswahl. Langes Drücken auf Seitenbuttons ohne Textmarkierung.

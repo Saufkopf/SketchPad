@@ -176,3 +176,11 @@ body{position:relative}
 .eraserhint{display:block;font-size:11px;color:#64778a;line-height:1.4}
 
 #photoflyout,#pageactions{position:fixed;z-index:110;display:flex;flex-direction:column;gap:4px;padding:7px;background:#fff;border:1px solid #b6c4d3;border-radius:9px;box-shadow:0 5px 18px #0002}#photoflyout[hidden],#pageactions[hidden]{display:none}#photoflyout button,#pageactions button{padding:9px 13px;text-align:left;white-space:nowrap;background:#f5f8fc;border:1px solid #d6e0eb;border-radius:5px}#pagelist button{touch-action:pan-x}
+
+#pagelist button,#pagelist button *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+#cameraoverlay{position:fixed;inset:0;z-index:1000;background:#000d;display:flex;align-items:center;justify-content:center;padding:12px}
+#cameraoverlay[hidden]{display:none}
+#camerapanel{width:min(96vw,850px);background:#182331;border-radius:12px;padding:12px;box-shadow:0 8px 35px #0009}
+#cameravideo{display:block;width:100%;max-height:75vh;object-fit:contain;background:#000;border-radius:8px}
+.cameraactions{display:flex;gap:12px;justify-content:center;padding-top:12px}
+.cameraactions button{padding:12px 18px;border-radius:8px;border:1px solid #ddd;background:#f5f8fc;font-size:16px}
