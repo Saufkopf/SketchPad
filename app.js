@@ -98,24 +98,52 @@ if(item.type==='window'||item.type==='door'){
  ctx.stroke();ctx.restore();return;
 }
 if(item.type==='pen'&&['pressure','ballpoint'].includes(item.penType)&&item.points?.length){
-  const pts=item.points,base=Math.max(.05,Number(item.width)||.5);
-  // Keep a meaningful taper even for the finest widths. Pressure response is nonlinear,
-  // and the ballpoint combines pen pressure with motion speed (faster = slightly wider).
+  const pts=item.points,base=Math.max(.015,Number(item.width)||.5);
   const pressureAt=p=>{const raw=Number(p?.pressure);return Number.isFinite(raw)&&raw>0?Math.min(1,Math.max(0,raw)):.5};
-  const strokeFactor=(a,b)=>{
-    const pr=(pressureAt(a)+pressureAt(b))/2;
-    const eased=Math.pow(pr,1.7);
-    if(item.penType==='pressure')return .12+1.65*eased;
-    const dt=Math.max(1,(b.time??0)-(a.time??0));
-    const speed=Math.hypot(b.x-a.x,b.y-a.y)/dt;
-    return .32+.45*Math.pow(pr,1.5)+.72*Math.min(1,Math.sqrt(Math.max(0,speed)*2.8));
-  };
-  if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.025,base*strokeFactor(pts[0],pts[0]))/2,0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
-  else for(let i=1;i<pts.length;i++){
-    const a=pts[i-1],b=pts[i];ctx.lineWidth=Math.max(.025,base*strokeFactor(a,b));
-    ctx.beginPath();
-    if(pts.length>2){const start=i===1?a:{x:(pts[i-2].x+a.x)/2,y:(pts[i-2].y+a.y)/2};const end=i===pts.length-1?b:{x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.moveTo(start.x,start.y);ctx.quadraticCurveTo(a.x,a.y,end.x,end.y);if(i===pts.length-1)ctx.lineTo(b.x,b.y)}
-    else{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}ctx.stroke();
+  if(item.penType==='ballpoint'){
+    // Smooth, pressure-and-motion-sensitive handwriting inspired by digital ink engines.
+    // Velocity is measured in screen px/ms so zooming does not change the writing feel.
+    // Filter widths across several samples, avoiding visibly disconnected thick segments.
+    const lengths=[0];let total=0;
+    for(let i=1;i<pts.length;i++){total+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);lengths.push(total)}
+    const widths=[];let filtered=base*.50;
+    for(let i=0;i<pts.length;i++){
+      const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];
+      const dt=Math.max(1,(b.time??0)-(a.time??0));
+      const speed=Math.hypot(b.x-a.x,b.y-a.y)/dt;
+      const motion=Math.min(1,speed/1.25);
+      const pressure=pressureAt(pts[i]);
+      // Wider when moving quickly, with a softer pressure contribution.
+      const desired=base*(.18+1.15*Math.pow(motion,.65)+.48*Math.pow(pressure,1.4));
+      filtered+=(desired-filtered)*.32;
+      const taperDistance=Math.max(base*2.5,Math.min(total*.24,base*12));
+      const begin=Math.min(1,lengths[i]/Math.max(.01,taperDistance));
+      const end=Math.min(1,(total-lengths[i])/Math.max(.01,taperDistance));
+      const taper=.20+.80*Math.pow(Math.max(0,Math.min(begin,end)),.55);
+      widths.push(Math.max(.012,filtered*taper));
+    }
+    if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.012,base*.24),0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
+    else{
+      // Dense interpolation yields continuous, rounded joins even at high zoom.
+      for(let i=1;i<pts.length;i++){
+        const a=pts[i-1],b=pts[i];const dist=Math.hypot(b.x-a.x,b.y-a.y);
+        const steps=Math.max(1,Math.min(36,Math.ceil(dist/.15)));
+        for(let j=0;j<=steps;j++){
+          const t=j/steps,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
+          const w=widths[i-1]+(widths[i]-widths[i-1])*t;
+          ctx.beginPath();ctx.arc(x,y,Math.max(.006,w/2),0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill();
+        }
+      }
+    }
+  }else{
+    const strokeFactor=(a,b)=>{const pr=(pressureAt(a)+pressureAt(b))/2;return .12+1.65*Math.pow(pr,1.7)};
+    if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.025,base*strokeFactor(pts[0],pts[0]))/2,0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
+    else for(let i=1;i<pts.length;i++){
+      const a=pts[i-1],b=pts[i];ctx.lineWidth=Math.max(.025,base*strokeFactor(a,b));
+      ctx.beginPath();
+      if(pts.length>2){const start=i===1?a:{x:(pts[i-2].x+a.x)/2,y:(pts[i-2].y+a.y)/2};const end=i===pts.length-1?b:{x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.moveTo(start.x,start.y);ctx.quadraticCurveTo(a.x,a.y,end.x,end.y);if(i===pts.length-1)ctx.lineTo(b.x,b.y)}
+      else{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}ctx.stroke();
+    }
   }
   ctx.restore();return;
 }
@@ -358,8 +386,8 @@ penType=['normal','pressure','marker','ballpoint'].includes(localStorage.getItem
 // Sieben feste Stiftstärken in Punkt: obere Auswahl und untere Skala sind gekoppelt.
 // Anzeige-Stufen; die tatsächliche Canvas-Strichbreite beträgt die Hälfte der bisherigen Stärke.
 // Die 8er-Stufe entfällt, zusätzliche Zwischenstufen sind ergänzt.
-const PEN_SIZE_LABELS=[1,2,4,6,10,20,30];
-const PEN_PT_STOPS=[0.125,0.5,2,3,5,10,15];
+const PEN_SIZE_LABELS=[1,2,4,6,10,20];
+const PEN_PT_STOPS=[0.0625,0.25,1,1.5,5,10];
 const penSizeLabel=n=>String(PEN_SIZE_LABELS[nearestPenIndex(n)]);
 // Einmalige Umstellung gespeicherter Favoriten auf halbe Breite; bestehende Zeichnungen bleiben unverändert.
 if(localStorage.getItem('sketchpad-pen-widths-v162')!=='1'){
