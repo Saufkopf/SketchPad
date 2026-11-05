@@ -150,3 +150,8 @@ body{position:relative}
 
 /* v1.6.1 – 8 Größenpositionen */
 .penquickwidths{grid-template-columns:repeat(8,minmax(0,1fr))}
+
+/* v1.6.2 – elf Stiftstufen auch auf schmalen Tablets gut antippbar */
+.penquickwidths{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:0}
+#pendialog .penquickwidths button{width:23px;min-height:28px;font-size:11px}
+#shapequickwidths button{width:23px;font-size:11px}
