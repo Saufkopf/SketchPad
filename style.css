@@ -159,3 +159,18 @@ body{position:relative}
 /* v1.6.3: seven selectable widths; keep numbers and slider aligned */
 #pendialog .penquickwidths, #shapesdialog .penquickwidths{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
 #pendialog .penquickwidths button{width:32px;min-height:32px;font-size:12px}
+
+/* v1.6.6: Kompaktes Radierer-Menü neben der linken Werkzeugleiste */
+#eraserdialog{position:fixed;margin:0;width:min(278px,calc(100vw - 75px));max-height:calc(100dvh - 16px);overflow:auto;padding:12px;border:1px solid #b9c7d8;border-radius:12px;box-shadow:0 8px 24px #0003;background:#fff;color:#263b51;z-index:120}
+#eraserdialog::backdrop{background:transparent}
+.eraserheading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px}
+#eraserx{font-size:24px;line-height:1;border:0;background:transparent;padding:2px 8px}
+.eraserquick{display:flex;justify-content:space-between;gap:3px;margin:5px 0 14px}
+.eraserquick button{border:1px solid #d4e0ec;border-radius:18px;background:#f8fbff;padding:6px 8px;font-size:12px}
+.eraserquick button.chosen{background:#d8eafb;border-color:#2677bd;font-weight:700}
+.erasercontrols{display:flex;align-items:center;gap:10px}
+#eraserrange{flex:1;min-width:0;touch-action:pan-x}
+#erasernumber{width:54px;border:1px solid #bdccda;border-radius:7px;padding:6px;font-size:14px}
+.eraserpreviewwrap{height:110px;display:flex;align-items:center;justify-content:center;margin:9px 0 3px;background:#f4f7fa;border-radius:8px}
+#eraserpreview{width:28px;height:28px;border-radius:50%;background:#b6c3d1;border:1px solid #71869d;box-sizing:border-box}
+.eraserhint{display:block;font-size:11px;color:#64778a;line-height:1.4}
