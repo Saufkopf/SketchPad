@@ -122,17 +122,32 @@ if(item.type==='pen'&&['pressure','ballpoint'].includes(item.penType)&&item.poin
       const taper=.20+.80*Math.pow(Math.max(0,Math.min(begin,end)),.55);
       widths.push(Math.max(.012,filtered*taper));
     }
-    if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.012,base*.24),0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
-    else{
-      // Dense interpolation yields continuous, rounded joins even at high zoom.
+    // Fast variable-width ink: draw connected strokes rather than thousands
+    // of individually filled circles. Keep hairlines visible at low zoom.
+    const minVisible=.65/view.z;
+    ctx.strokeStyle=item.color||color;
+    ctx.fillStyle=item.color||color;
+    if(pts.length===1){
+      ctx.beginPath();
+      ctx.arc(pts[0].x,pts[0].y,Math.max(minVisible,base*.24)/2,0,Math.PI*2);
+      ctx.fill();
+    }else{
       for(let i=1;i<pts.length;i++){
-        const a=pts[i-1],b=pts[i];const dist=Math.hypot(b.x-a.x,b.y-a.y);
-        const steps=Math.max(1,Math.min(36,Math.ceil(dist/.15)));
-        for(let j=0;j<=steps;j++){
-          const t=j/steps,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
-          const w=widths[i-1]+(widths[i]-widths[i-1])*t;
-          ctx.beginPath();ctx.arc(x,y,Math.max(.006,w/2),0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill();
+        const a=pts[i-1],b=pts[i];
+        const w=Math.max(minVisible,(widths[i-1]+widths[i])*.5);
+        ctx.lineWidth=w;
+        ctx.beginPath();
+        if(pts.length>2){
+          const start=i===1?a:{x:(pts[i-2].x+a.x)/2,y:(pts[i-2].y+a.y)/2};
+          const end=i===pts.length-1?b:{x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+          ctx.moveTo(start.x,start.y);
+          ctx.quadraticCurveTo(a.x,a.y,end.x,end.y);
+          if(i===pts.length-1)ctx.lineTo(b.x,b.y);
+        }else{
+          ctx.moveTo(a.x,a.y);
+          ctx.lineTo(b.x,b.y);
         }
+        ctx.stroke();
       }
     }
   }else{
