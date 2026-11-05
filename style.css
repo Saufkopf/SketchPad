@@ -155,3 +155,7 @@ body{position:relative}
 .penquickwidths{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:0}
 #pendialog .penquickwidths button{width:23px;min-height:28px;font-size:11px}
 #shapequickwidths button{width:23px;font-size:11px}
+
+/* v1.6.3: seven selectable widths; keep numbers and slider aligned */
+#pendialog .penquickwidths, #shapesdialog .penquickwidths{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
+#pendialog .penquickwidths button{width:32px;min-height:32px;font-size:12px}

@@ -98,13 +98,28 @@ if(item.type==='window'||item.type==='door'){
  ctx.stroke();ctx.restore();return;
 }
 if(item.type==='pen'&&['pressure','ballpoint'].includes(item.penType)&&item.points?.length){
-  const pts=item.points,base=item.width||3;
-  ctx.lineCap='round';ctx.lineJoin='round';
-  if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.05,base*(.2+.8*(pts[0].pressure??.5)))/2,0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
-  else for(let i=1;i<pts.length;i++){let a=pts[i-1],b=pts[i],pr=((a.pressure??.5)+(b.pressure??.5))/2;let speed=Math.hypot(b.x-a.x,b.y-a.y)/Math.max(1,(b.time??0)-(a.time??0));ctx.lineWidth=Math.max(.05,item.penType==='ballpoint'?base*(.65+Math.min(1.25,speed*.9)):base*(.2+.8*pr));ctx.beginPath();if(pts.length>2){const start=i===1?a:{x:(pts[i-2].x+a.x)/2,y:(pts[i-2].y+a.y)/2};const end=i===pts.length-1?b:{x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.moveTo(start.x,start.y);ctx.quadraticCurveTo(a.x,a.y,end.x,end.y);if(i===pts.length-1)ctx.lineTo(b.x,b.y)}else{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}ctx.stroke()}
+  const pts=item.points,base=Math.max(.05,Number(item.width)||.5);
+  // Keep a meaningful taper even for the finest widths. Pressure response is nonlinear,
+  // and the ballpoint combines pen pressure with motion speed (faster = slightly wider).
+  const pressureAt=p=>{const raw=Number(p?.pressure);return Number.isFinite(raw)&&raw>0?Math.min(1,Math.max(0,raw)):.5};
+  const strokeFactor=(a,b)=>{
+    const pr=(pressureAt(a)+pressureAt(b))/2;
+    const eased=Math.pow(pr,1.7);
+    if(item.penType==='pressure')return .12+1.65*eased;
+    const dt=Math.max(1,(b.time??0)-(a.time??0));
+    const speed=Math.hypot(b.x-a.x,b.y-a.y)/dt;
+    return .32+.45*Math.pow(pr,1.5)+.72*Math.min(1,Math.sqrt(Math.max(0,speed)*2.8));
+  };
+  if(pts.length===1){ctx.beginPath();ctx.arc(pts[0].x,pts[0].y,Math.max(.025,base*strokeFactor(pts[0],pts[0]))/2,0,Math.PI*2);ctx.fillStyle=item.color||color;ctx.fill()}
+  else for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i];ctx.lineWidth=Math.max(.025,base*strokeFactor(a,b));
+    ctx.beginPath();
+    if(pts.length>2){const start=i===1?a:{x:(pts[i-2].x+a.x)/2,y:(pts[i-2].y+a.y)/2};const end=i===pts.length-1?b:{x:(a.x+b.x)/2,y:(a.y+b.y)/2};ctx.moveTo(start.x,start.y);ctx.quadraticCurveTo(a.x,a.y,end.x,end.y);if(i===pts.length-1)ctx.lineTo(b.x,b.y)}
+    else{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}ctx.stroke();
+  }
   ctx.restore();return;
- }
- if(item.type==='pen'&&item.penType==='marker'){ctx.globalAlpha=.32;ctx.lineCap='butt';ctx.lineWidth=(item.width||3)*3;}
+}
+if(item.type==='pen'&&item.penType==='marker'){ctx.globalAlpha=.32;ctx.lineCap='butt';ctx.lineWidth=(item.width||3)*3;}
  if(item.type==='eraser'){ctx.strokeStyle='#fff';ctx.lineWidth=item.width||28}ctx.beginPath();path(item);ctx.stroke();ctx.restore()}
 function drawChecklist(p){let lines=[(p.category||'Küche').toUpperCase()+' – KUNDENWÜNSCHE','Fronten – Farbe / Dekor','Korpus – Farbe / Dekor','Kombinationsfarbe / Dekor','Laden / Innenausstattung','Arbeitsplatte – Material / Dekor','Griffe / grifflos / Griffmulden','Spüle','Armatur','Abfallsammler','ELEKTROGERÄTE','☐ Backrohr       ☐ Kochfeld / Induktion','☐ Geschirrspüler   ☐ Kühlschrank','☐ Gefrierschrank   ☐ Mikrowelle','☐ Dampfgarer       ☐ Dunstabzug','Sonstige Wünsche / Notizen'];if(p.category&&p.category!=='Küche')lines=[p.category.toUpperCase()+' – KUNDENWÜNSCHE','Farbe / Dekor','Material','Ausführung','Beschläge','Griffe','Beleuchtung','Besondere Wünsche','Maße / Hinweise','Weitere Notizen'];ctx.save();ctx.fillStyle='#24334b';ctx.strokeStyle='#c7d2df';let w=bounds(p)?.w||794;lines.forEach((s,i)=>{let y=42+i*52;ctx.font=(i===0||i===10)?'bold 18px sans-serif':'15px sans-serif';ctx.fillText(s,35,y);if(i!==0&&i!==10){ctx.beginPath();ctx.moveTo(35,y+29);ctx.lineTo(w-35,y+29);ctx.stroke()}});ctx.restore()}
 function drawWallJoins(p){
@@ -343,8 +358,8 @@ penType=['normal','pressure','marker','ballpoint'].includes(localStorage.getItem
 // Sieben feste Stiftstärken in Punkt: obere Auswahl und untere Skala sind gekoppelt.
 // Anzeige-Stufen; die tatsächliche Canvas-Strichbreite beträgt die Hälfte der bisherigen Stärke.
 // Die 8er-Stufe entfällt, zusätzliche Zwischenstufen sind ergänzt.
-const PEN_SIZE_LABELS=[1,2,3,4,5,6,10,15,20,30,40];
-const PEN_PT_STOPS=[0.25,0.5,1.5,2,2.5,3,5,7.5,10,15,20];
+const PEN_SIZE_LABELS=[1,2,4,6,10,20,30];
+const PEN_PT_STOPS=[0.125,0.5,2,3,5,10,15];
 const penSizeLabel=n=>String(PEN_SIZE_LABELS[nearestPenIndex(n)]);
 // Einmalige Umstellung gespeicherter Favoriten auf halbe Breite; bestehende Zeichnungen bleiben unverändert.
 if(localStorage.getItem('sketchpad-pen-widths-v162')!=='1'){
@@ -359,7 +374,7 @@ function penSetWidth(v){
  const idx=nearestPenIndex(v);width=PEN_PT_STOPS[idx];
  $('width').max='20';$('width').value=String(Math.min(20,width));
  $('widthout').textContent=penSizeLabel(width);
- $('widthpreset').value=[1,2,3,4].includes(Number(penSizeLabel(width)))?penSizeLabel(width):'';
+ $('widthpreset').value=[1,2,4].includes(Number(penSizeLabel(width)))?penSizeLabel(width):'';
  $('penwidthnumber').value=penSizeLabel(width);
  $('penwidthrange').min='0';$('penwidthrange').max=String(PEN_PT_STOPS.length-1);$('penwidthrange').step='1';$('penwidthrange').value=String(idx);
  // Punkt exakt unter der ausgewählten Zahl; gleiche Teilung wie die sieben Buttons.
