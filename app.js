@@ -19,7 +19,18 @@ function size(){let r=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1;can
 const dims=()=>[canvas.clientWidth,canvas.clientHeight],world=(x,y)=>({x:(x-view.x)/view.z,y:(y-view.y)/view.z}),screen=p=>({x:p.x*view.z+view.x,y:p.y*view.z+view.y});
 function bounds(p=page()){if(p.paper==='infinite')return null;let[w,h]=SIZES[p.paper];return{w:w*MM,h:h*MM}}
 function startView(){let [w,h]=dims(),b=bounds();view.z=1;view.x=b?(w-b.w)/2:w/2;view.y=b?(h-b.h)/2:h/2;draw()}
-function fit(){let[w,h]=dims(),b=bounds();if(b){view.z=Math.min((w-50)/b.w,(h-50)/b.h,1.8);view.x=(w-b.w*view.z)/2;view.y=(h-b.h*view.z)/2}else view={x:w/2,y:h/2,z:1};draw()}
+function fit(){
+ const [w,h]=dims(),paper=bounds(),hasContent=page().items.length>0;
+ // Fit every item, including strokes and photos outside the nominal paper.
+ const b=hasContent?pageBounds(page()):(paper?{x:0,y:0,w:paper.w,h:paper.h}:null);
+ if(b){
+  const pad=32;
+  view.z=Math.max(.15,Math.min(30,(w-pad*2)/Math.max(1,b.w),(h-pad*2)/Math.max(1,b.h)));
+  view.x=(w-b.w*view.z)/2-b.x*view.z;
+  view.y=(h-b.h*view.z)/2-b.y*view.z;
+ }else view={x:w/2,y:h/2,z:1};
+ draw();
+}
 function path(item){let p=item.points||[];if(['pen','eraser'].includes(item.type)){if(!p.length)return;ctx.moveTo(p[0].x,p[0].y);if(p.length===1){ctx.lineTo(p[0].x+.01,p[0].y+.01)}else if(p.length===2)ctx.lineTo(p[1].x,p[1].y);else{for(let i=1;i<p.length-1;i++){let m={x:(p[i].x+p[i+1].x)/2,y:(p[i].y+p[i+1].y)/2};ctx.quadraticCurveTo(p[i].x,p[i].y,m.x,m.y)}ctx.lineTo(p.at(-1).x,p.at(-1).y)}}else if(['line','wall','window','door','measure'].includes(item.type)){ctx.moveTo(item.x1,item.y1);ctx.lineTo(item.x2,item.y2)}else if(item.type==='rect')ctx.rect(item.x1,item.y1,item.x2-item.x1,item.y2-item.y1);else if(item.type==='ellipse'){let x=(item.x1+item.x2)/2,y=(item.y1+item.y2)/2;ctx.ellipse(x,y,Math.max(.1,Math.abs(item.x2-item.x1)/2),Math.max(.1,Math.abs(item.y2-item.y1)/2),0,0,Math.PI*2)}}
 function drawItem(item){ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=item.color||color;ctx.lineWidth=item.width||3;
 if(item.type==='image'){let img=imageCache.get(item.src);if(!img){img=new Image();img.onload=draw;img.src=item.src;imageCache.set(item.src,img)}if(img.complete&&img.naturalWidth){ctx.translate(item.x,item.y);ctx.rotate(item.angle||0);ctx.drawImage(img,0,0,item.w,item.h);}ctx.restore();return}
@@ -666,3 +677,13 @@ for(let digit of ['1','2','3','4','5','6','7','8','9',',','0','⌫']){let b=docu
 (async()=>{size();let id=localStorage.getItem('sketchpad-current');if(id)await load(id);else{syncPage();startView();await save()}if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js').catch(console.error)})();
 
 $('sidecolorswatch').style.background=color;
+
+// Prevent Android/Chrome long-press text selection on the drawing tool buttons.
+document.querySelectorAll('#tools button').forEach(button=>{
+ button.style.userSelect='none';
+ button.style.webkitUserSelect='none';
+ button.style.webkitTouchCallout='none';
+ button.addEventListener('selectstart',event=>event.preventDefault());
+ button.addEventListener('dragstart',event=>event.preventDefault());
+ button.addEventListener('contextmenu',event=>event.preventDefault());
+});

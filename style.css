@@ -184,3 +184,6 @@ body{position:relative}
 #cameravideo{display:block;width:100%;max-height:75vh;object-fit:contain;background:#000;border-radius:8px}
 .cameraactions{display:flex;gap:12px;justify-content:center;padding-top:12px}
 .cameraactions button{padding:12px 18px;border-radius:8px;border:1px solid #ddd;background:#f5f8fc;font-size:16px}
+
+/* v1.7.0: long-press on tool buttons must never select their text */
+#tools,#tools button,#tools button *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;touch-action:manipulation}

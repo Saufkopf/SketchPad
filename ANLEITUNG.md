@@ -2,4 +2,4 @@ SketchPad 1.6.6 – Radierer-Menü und Schreibstiftkorrektur\n\nRadierer antippe
 Version 1.6.7: Seitenreiter lange drücken für Umbenennen/Löschen. Foto-Werkzeug öffnet Aufnahme/Galerie. Kameraaufnahme über direkt betätigten Datei-Aufnahmedialog.
 
 
-Version 1.6.9: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTTPS erforderlich), Foto aufnehmen und in die Zeichnung einfügen. Fallback auf Android-Kameraauswahl. Langes Drücken auf Seitenbuttons ohne Textmarkierung.
+Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTTPS erforderlich), Foto aufnehmen und in die Zeichnung einfügen. Fallback auf Android-Kameraauswahl. Langes Drücken auf Seitenbuttons ohne Textmarkierung.
