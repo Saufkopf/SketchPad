@@ -496,6 +496,27 @@ function printPdf(){
  </style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),800)<\/script></body></html>`);win.document.close();
 }
 
+// Page navigation helpers restored after the photo-editor refactor.
+let pageMenuIndex=-1;
+function hidePageActions(){
+ pageMenuIndex=-1;
+ const menu=$('pageactions');if(menu)menu.hidden=true;
+}
+function showPageActions(index,button){
+ pageMenuIndex=index;
+ const menu=$('pageactions');if(!menu)return;
+ menu.hidden=false;
+ const r=button.getBoundingClientRect();
+ menu.style.left=Math.max(4,Math.min(window.innerWidth-180,r.left))+'px';
+ menu.style.top=Math.max(4,r.top-94)+'px';
+}
+function syncPage(){
+ const p=page();if(!p)return;
+ if($('paper'))$('paper').value=p.paper||'infinite';
+ if($('grid'))$('grid').checked=p.grid!==false;
+ renderTabs();
+ draw();
+}
 function renderTabs(){$('pagelist').replaceChildren();doc.pages.forEach((p,i)=>{let b=document.createElement('button');b.textContent=`${i+1}. ${p.name}`;b.className=i===pageIndex?'current':'';b.style.userSelect='none';b.style.webkitUserSelect='none';b.addEventListener('selectstart',e=>e.preventDefault());let timer=null,longPress=false;const clear=()=>{if(timer!==null){clearTimeout(timer);timer=null}};b.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();longPress=false;clear();timer=setTimeout(()=>{longPress=true;showPageActions(i,b)},650)});b.addEventListener('pointerup',clear);b.addEventListener('pointercancel',clear);b.addEventListener('pointerleave',clear);b.addEventListener('contextmenu',e=>{e.preventDefault();clear();longPress=true;showPageActions(i,b)});b.addEventListener('dragstart',e=>e.preventDefault());b.onclick=()=>{if(longPress){longPress=false;return}hidePageActions();pageIndex=i;selectedPhoto=null;redo=[];syncPage();fit();changed()};$('pagelist').append(b)})}
 $('pagerename').onclick=()=>{const i=pageMenuIndex;if(i<0)return;hidePageActions();let name=prompt('Seitenname:',doc.pages[i].name);if(name&&name.trim()){doc.pages[i].name=name.trim();renderTabs();changed()}};
 $('pageremove').onclick=()=>{const i=pageMenuIndex;if(i<0)return;hidePageActions();if(doc.pages.length===1){alert('Mindestens eine Seite muss bleiben.');return}if(!confirm(`Seite „${doc.pages[i].name}“ wirklich löschen?`))return;doc.pages.splice(i,1);if(pageIndex>=i)pageIndex=Math.max(0,pageIndex-(pageIndex===i?1:1));pageIndex=Math.min(pageIndex,doc.pages.length-1);selectedPhoto=null;redo=[];syncPage();fit();changed()};
