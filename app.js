@@ -484,7 +484,7 @@ function pageBounds(p){
  const left=Math.min(...xs)-pad,top=Math.min(...ys)-pad;
  return{x:left,y:top,w:Math.max(20,Math.max(...xs)-Math.min(...xs)+2*pad),h:Math.max(20,Math.max(...ys)-Math.min(...ys)+2*pad)};
 }
-function exportPage(p){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(3,7000/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active;ctx=c;active=null;if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i);ctx=old;active=oldActive;return out}
+function exportPage(p,maxSide=7000){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(6,maxSide/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active;ctx=c;active=null;if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i);ctx=old;active=oldActive;return out}
 function printPdf(){
  const win=window.open('','_blank');if(!win){alert('Bitte Pop-ups für den PDF-Export erlauben.');return}
  const pages=doc.pages.map(p=>({p,bb:pageBounds(p),src:exportPage(p).toDataURL('image/png')}));
@@ -506,19 +506,16 @@ function printPdf(){
 
 
 // Portable PDF with embedded JPEG pages, created locally without an external service.
-function pdfDocumentBlob(){
+function jpegBytes(canvas,quality){
+ const data=canvas.toDataURL('image/jpeg',quality).split(',')[1];
+ const bin=atob(data),bytes=new Uint8Array(bin.length);
+ for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
+ return bytes;
+}
+function buildPdf(images){
  const enc=new TextEncoder(),parts=[],offsets=[0];let length=0;
  const add=data=>{const bytes=typeof data==='string'?enc.encode(data):data;parts.push(bytes);length+=bytes.length};
  const object=(id,body)=>{offsets[id]=length;add(`${id} 0 obj\n`);add(body);add('\nendobj\n')};
- const images=doc.pages.map(p=>{
-  const bb=pageBounds(p),cv=exportPage(p);
-  // JPEG compression keeps shared PDFs practical, including camera images.
-  const data=cv.toDataURL('image/jpeg',.83).split(',')[1];
-  const bin=atob(data),bytes=new Uint8Array(bin.length);
-  for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
-  const landscape=p.kind!=='checklist'&&bb.w>bb.h;
-  return {bytes,w:cv.width,h:cv.height,pw:landscape?841.89:595.28,ph:landscape?595.28:841.89};
- });
  add('%PDF-1.4\n');
  object(1,'<< /Type /Catalog /Pages 2 0 R >>');
  object(2,`<< /Type /Pages /Kids [${images.map((_,i)=>3+i*3+' 0 R').join(' ')}] /Count ${images.length} >>`);
@@ -537,19 +534,53 @@ function pdfDocumentBlob(){
  add(`trailer\n<< /Size ${total+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
  return new Blob(parts,{type:'application/pdf'});
 }
-async function sharePdf(){
- let blob;
- try{blob=pdfDocumentBlob()}catch(err){alert('PDF-Erstellung fehlgeschlagen: '+err.message);return}
- const file=new File([blob],safeName()+'.pdf',{type:'application/pdf'});
- try{
-  if(navigator.canShare?.({files:[file]})&&navigator.share){
-   await navigator.share({files:[file],title:safeName(),text:'SketchPad-Zeichnung als PDF'});
-   return;
+async function pdfDocumentBlob(){
+ const maxBytes=5*1024*1024,settings=[
+  [4500,.91],[4000,.86],[3500,.82],[3000,.77],[2600,.72],
+  [2200,.68],[1900,.63],[1600,.59],[1300,.53],[1050,.48],
+  [850,.43],[650,.38],[480,.32],[320,.26]
+ ];
+ let last=null;
+ for(const [maxSide,quality] of settings){
+  const images=[];
+  for(const p of doc.pages){
+   const bb=pageBounds(p),cv=exportPage(p,maxSide);
+   const bytes=jpegBytes(cv,quality);
+   const landscape=p.kind!=='checklist'&&bb.w>bb.h;
+   images.push({bytes,w:cv.width,h:cv.height,pw:landscape?841.89:595.28,ph:landscape?595.28:841.89});
+   cv.width=1;cv.height=1;
   }
- }catch(err){if(err.name==='AbortError')return;console.warn('PDF-Teilen fehlgeschlagen',err)}
- download(file.name,blob);
- alert('Die PDF wurde gespeichert. Bitte Gmail öffnen, eine E-Mail erstellen und die heruntergeladene PDF als Anhang hinzufügen. Direktes Teilen wird von diesem Browser nicht unterstützt.');
+  last=buildPdf(images);
+  if(last.size<=maxBytes)return last;
+  // Let the browser repaint between potentially expensive compression passes.
+  await new Promise(resolve=>setTimeout(resolve,0));
+ }
+ throw Error('Dieses Projekt ist für das 5-MB-Limit zu umfangreich. Bitte einzelne Seiten exportieren oder Bilder reduzieren.');
 }
+let exportBusy=false;
+async function runPdfExport(mode){
+ if(exportBusy)return;
+ exportBusy=true;
+ const status=$('exportstatus'),buttons=[$('exportlocal'),$('exportshare')];
+ buttons.forEach(b=>b.disabled=true);
+ status.textContent='PDF wird erstellt und auf maximal 5 MB optimiert …';
+ try{
+  // Yield once so the progress text becomes visible.
+  await new Promise(resolve=>setTimeout(resolve,40));
+  const blob=await pdfDocumentBlob();
+  status.textContent=`PDF fertig: ${(blob.size/1024/1024).toFixed(2)} MB`;
+  const file=new File([blob],safeName()+'.pdf',{type:'application/pdf'});
+  if(mode==='share'&&navigator.share&&navigator.canShare?.({files:[file]})){
+   try{await navigator.share({files:[file],title:safeName()});$('exportdialog').close();return}
+   catch(err){if(err.name==='AbortError')return;console.warn(err)}
+  }
+  download(file.name,blob);
+  $('exportdialog').close();
+  if(mode==='share')alert('Direktes Teilen ist hier nicht verfügbar. Die PDF wurde heruntergeladen und kann in Gmail angehängt werden.');
+ }catch(err){status.textContent='Export fehlgeschlagen: '+err.message}
+ finally{exportBusy=false;buttons.forEach(b=>b.disabled=false)}
+}
+function openPdfExport(){ $('exportstatus').textContent='PDF mit hoher Detailauflösung, maximal 5 MB. Bei großen Projekten wird die Bildqualität automatisch angepasst.';$('exportdialog').showModal() }
 // Page navigation helpers restored after the photo-editor refactor.
 let pageMenuIndex=-1;
 function hidePageActions(){
@@ -686,7 +717,7 @@ function showProjectFlyout(){
 projectButton.onclick=()=>projectFlyout.hidden?showProjectFlyout():hideProjectFlyout();
 projectNameEdit.addEventListener('input',()=>{$('docname').value=projectNameEdit.value;changed()});
 projectFlyout.querySelectorAll('[data-projectaction]').forEach(button=>button.onclick=()=>{
- hideProjectFlyout();const target=$(button.dataset.projectaction);if(target)target.click();
+ hideProjectFlyout();if(button.dataset.projectaction==='exportdialog'){openPdfExport();return}const target=$(button.dataset.projectaction);if(target)target.click();
 });
 document.addEventListener('pointerdown',e=>{
  if(!projectFlyout.hidden&&!projectFlyout.contains(e.target)&&!projectButton.contains(e.target))hideProjectFlyout();
@@ -719,7 +750,7 @@ $('shapesbutton').onclick=()=>{updateShapeCurrent();syncShapeWidth();renderShape
 document.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>{shapeChoice=b.dataset.shape;setTool(shapeChoice);$('shapesdialog').close();$('shapesbutton').title='Formen: '+b.textContent.trim()});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 $('erasersize').oninput=e=>setEraserSize(e.target.value);syncEraserPopup();$('width').oninput=e=>penSetWidth(e.target.value);$('widthpreset').onchange=e=>penSetWidth(e.target.value?PEN_PT_STOPS[PEN_SIZE_LABELS.indexOf(Number(e.target.value))]:0.25);$('paper').onchange=e=>{page().paper=e.target.value;fit();changed()};$('grid').onchange=e=>{page().grid=e.target.checked;draw();changed()};$('docname').oninput=changed;
-$('undo').onclick=()=>{if(page().items.length){redo.push(page().items.pop());draw();changed()}};$('redo').onclick=()=>{if(redo.length){page().items.push(redo.pop());draw();changed()}};$('fit').onclick=fit;$('more').onclick=()=>$('options').showModal();$('close').onclick=()=>$('options').close();$('new').onclick=async()=>{if(confirm('Neues Projekt? Das bisherige bleibt gespeichert.')){await save();newDoc();$('options').close()}};$('save').onclick=()=>save();$('projects').onclick=()=>{$('options').close();showProjects()};$('closeprojects').onclick=()=>$('projectdialog').close();$('png').onclick=()=>exportPage(page()).toBlob(b=>download(safeName()+`_Seite${pageIndex+1}.png`,b));$('pdf').onclick=printPdf;$('sharepdf').onclick=sharePdf;$('json').onclick=async()=>{await save();download(safeName()+'.json',new Blob([JSON.stringify(doc)],{type:'application/json'}))};$('importbtn').onclick=()=>$('import').click();$('import').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=normalize(JSON.parse(await f.text()));if(!Array.isArray(d.pages)||d.pages.some(p=>!Array.isArray(p.items)||!['infinite',...Object.keys(SIZES)].includes(p.paper)))throw Error('Ungültiges Projekt');doc={...d,id:uid(),name:String(d.name||'Import').slice(0,120)};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();await save();$('options').close()}catch(err){alert('Import fehlgeschlagen: '+err.message)}e.target.value=''};
+$('undo').onclick=()=>{if(page().items.length){redo.push(page().items.pop());draw();changed()}};$('redo').onclick=()=>{if(redo.length){page().items.push(redo.pop());draw();changed()}};$('fit').onclick=fit;$('more').onclick=()=>$('options').showModal();$('close').onclick=()=>$('options').close();$('new').onclick=async()=>{if(confirm('Neues Projekt? Das bisherige bleibt gespeichert.')){await save();newDoc();$('options').close()}};$('save').onclick=()=>save();$('projects').onclick=()=>{$('options').close();showProjects()};$('closeprojects').onclick=()=>$('projectdialog').close();$('png').onclick=()=>exportPage(page()).toBlob(b=>download(safeName()+`_Seite${pageIndex+1}.png`,b));$('pdf').onclick=openPdfExport;$('sharepdf').onclick=openPdfExport;$('exportopen').onclick=()=>{$('options').close();openPdfExport()};$('exportlocal').onclick=()=>runPdfExport('local');$('exportshare').onclick=()=>runPdfExport('share');$('exportcancel').onclick=()=>$('exportdialog').close();$('json').onclick=async()=>{await save();download(safeName()+'.json',new Blob([JSON.stringify(doc)],{type:'application/json'}))};$('importbtn').onclick=()=>$('import').click();$('import').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=normalize(JSON.parse(await f.text()));if(!Array.isArray(d.pages)||d.pages.some(p=>!Array.isArray(p.items)||!['infinite',...Object.keys(SIZES)].includes(p.paper)))throw Error('Ungültiges Projekt');doc={...d,id:uid(),name:String(d.name||'Import').slice(0,120)};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();await save();$('options').close()}catch(err){alert('Import fehlgeschlagen: '+err.message)}e.target.value=''};
 // Camera preview via getUserMedia: works independently of Android file-input capture handling.
 let cameraStream=null;
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}$('cameraoverlay').hidden=true;$('cameravideo').srcObject=null}

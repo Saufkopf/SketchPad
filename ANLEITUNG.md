@@ -13,3 +13,6 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 
 
 1.7.4: Foto löschen über eigenen Button im unteren Foto-Bereich (Foto vorher auswählen). PDF teilen über Android-Teilen-Dialog, dort Gmail wählen; andernfalls PDF herunterladen und in Gmail anhängen.
+
+
+1.7.5: Einheitliches PDF-Exportmenü mit lokal speichern/teilen. JPEG-Qualität und Rasterauflösung werden schrittweise angepasst, bis die PDF maximal 5 MiB hat. Fotos bleiben Rasterbilder; hohe Zoomstufen sind nicht unbegrenzt scharf.
