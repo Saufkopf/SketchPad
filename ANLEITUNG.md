@@ -28,3 +28,5 @@ Version 1.7.7: Foto-Werkzeug: Foto antippen, dann Foto-Menü > Ausgewähltes Fot
 
 
 1.7.9: Auswahl per Antippen ohne Verschieben; frühestens eine Sekunde später erneutes Ziehen, mit 7-Pixel-Bewegungsschwelle. Fenster/Türen bleiben beim Verschieben und Ändern ihrer Länge an ihrer zugeordneten Wand und werden auf deren Grenzen beschränkt.
+
+1.8.0: Auswahl ohne Zeitverzögerung: erstes Antippen markiert, beim zweiten Antippen kann sofort verschoben werden. Bewegungstoleranz bleibt erhalten.

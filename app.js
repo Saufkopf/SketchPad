@@ -492,10 +492,10 @@ function editObject(){
  }
 }
 function down(e){if($('numberdialog').open||$('textdialog').open)return;if(e.pointerType==='mouse'&&e.button===1){e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:'mouse'});gesture={pan:true,p,start:{...view}};return}e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(e.pointerType==='pen')stylusSeen=true;if(pointers.size===2){active=null;let ps=[...pointers.values()];gesture={distance:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:view.z,center:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}};gesture.anchor=world(gesture.center.x,gesture.center.y);draw();return}if(pointers.size>2)return;if(tool==='pan'){gesture={pan:true,p,start:{...view}};return}let a=world(p.x,p.y);if(tool==='select'){
- const hit=objectAt(a),now=performance.now();
- // First tap only selects. A second gesture after one second enables movement.
- const ready=hit&&hit===selectedObject&&now-selectedAt>=1000;
- if(hit!==selectedObject){selectedObject=hit;selectedAt=now}
+ const hit=objectAt(a);
+ // First tap selects; the next touch on the same object may move it immediately.
+ const ready=!!hit&&hit===selectedObject;
+ if(hit!==selectedObject)selectedObject=hit;
  showSelectActions();
  if(ready)objectMove={item:hit,p:a,moved:false,startScreen:p,started:false};
  draw();return;
