@@ -25,3 +25,6 @@ Version 1.7.7: Foto-Werkzeug: Foto antippen, dann Foto-Menü > Ausgewähltes Fot
 
 
 1.7.8: Auswahl-Werkzeug links. Objekt antippen, mit Stift verschieben, Bearbeiten oder Löschen. Bei Wänden werden zugehörige Fenster/Türen mitverschoben. PDF und Speicherformat unverändert.
+
+
+1.7.9: Auswahl per Antippen ohne Verschieben; frühestens eine Sekunde später erneutes Ziehen, mit 7-Pixel-Bewegungsschwelle. Fenster/Türen bleiben beim Verschieben und Ändern ihrer Länge an ihrer zugeordneten Wand und werden auf deren Grenzen beschränkt.

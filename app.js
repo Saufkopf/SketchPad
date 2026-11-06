@@ -5,7 +5,7 @@ const DXF_DOOR_LINES=[[1.06249,-0.0,1.06249,-0.1],[1.06249,-0.1,0.98295,-0.1],[0
 const GREEN='#168b55';
 const MM=3.7795275591,SIZES={a4p:[210,297],a4l:[297,210],a3p:[297,420],a3l:[420,297]},BLUE='#2454d9',RED='#d71920';
 const uid=()=>crypto.randomUUID(),makePage=(name='Seite 1',paper='infinite',kind='drawing')=>({id:uid(),name,paper,grid:kind==='drawing',kind,items:[]});
-let doc={id:uid(),name:'Neue Skizze',pages:[makePage()]},pageIndex=0,tool='pen',shapeChoice='rect',color='#2454d9',width=3,redo=[],view={x:0,y:0,z:1},active=null,pointers=new Map(),gesture=null,stylusSeen=false,saveTimer,dirty=false,saveRunning=false,saveAgain=false,saveState='Bereit',selectedPhoto=null,selectedObject=null,objectMove=null,selectedMeasure=null,measureEdit=null,revision=0,eraserSize=Math.min(100,Math.max(4,Number(localStorage.getItem('sketchpad-eraser-size'))||28)),eraserCursor=null,wallEnd=null,measureDraft=null,measureStage=0,textMove=null,selectedText=null,lastTextTap=null,textDefaultFont=21,textDefaultColor='#2454d9',textDialogColor='#2454d9',penType='normal'; 
+let doc={id:uid(),name:'Neue Skizze',pages:[makePage()]},pageIndex=0,tool='pen',shapeChoice='rect',color='#2454d9',width=3,redo=[],view={x:0,y:0,z:1},active=null,pointers=new Map(),gesture=null,stylusSeen=false,saveTimer,dirty=false,saveRunning=false,saveAgain=false,saveState='Bereit',selectedPhoto=null,selectedObject=null,objectMove=null,selectedAt=0,selectedMeasure=null,measureEdit=null,revision=0,eraserSize=Math.min(100,Math.max(4,Number(localStorage.getItem('sketchpad-eraser-size'))||28)),eraserCursor=null,wallEnd=null,measureDraft=null,measureStage=0,textMove=null,selectedText=null,lastTextTap=null,textDefaultFont=21,textDefaultColor='#2454d9',textDialogColor='#2454d9',penType='normal'; 
 const page=()=>doc.pages[pageIndex],imageCache=new Map();
 const dbPromise=new Promise((resolve,reject)=>{let r=indexedDB.open('sketchpad-v1',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('docs'))r.result.createObjectStore('docs',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
 async function store(mode='readonly'){return(await dbPromise).transaction('docs',mode).objectStore('docs')}
@@ -228,7 +228,7 @@ function draw(){if(!canvas.width)return;let[w,h]=dims();ctx.clearRect(0,0,w,h);c
  if(eraserCursor){ctx.beginPath();ctx.arc(eraserCursor.x-(eraserCursor.touch?60:0),eraserCursor.y,eraserSize*view.z/2,0,Math.PI*2);ctx.strokeStyle='#e34040';ctx.lineWidth=1.5;ctx.stroke()}status()}
 function eventPoint(e){let r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function zoomAt(f,x,y){let a=world(x,y);view.z=Math.max(.15,Math.min(30,view.z*f));view.x=x-a.x*view.z;view.y=y-a.y*view.z;draw()}
-function setTool(t){selectedObject=null;objectMove=null;hideSelectActions();selectedText=null;selectedMeasure=null;measureEdit=null;if(t!=='wall')finishWall();measureDraft=null;measureStage=0;resetInput();tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t||(b.dataset.tool==='wall'&&['window','door','opening-delete'].includes(t))));$('shapesbutton').classList.toggle('active',['line','rect','ellipse','square','circle','freeform'].includes(t));draw()}
+function setTool(t){selectedObject=null;objectMove=null;selectedAt=0;hideSelectActions();selectedText=null;selectedMeasure=null;measureEdit=null;if(t!=='wall')finishWall();measureDraft=null;measureStage=0;resetInput();tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t||(b.dataset.tool==='wall'&&['window','door','opening-delete'].includes(t))));$('shapesbutton').classList.toggle('active',['line','rect','ellipse','square','circle','freeform'].includes(t));draw()}
 function photoLocal(item,p){
  const dx=p.x-item.x,dy=p.y-item.y,angle=-(item.angle||0);
  return{x:dx*Math.cos(angle)-dy*Math.sin(angle),y:dx*Math.sin(angle)+dy*Math.cos(angle)};
@@ -429,6 +429,28 @@ function drawObjectSelection(){
  let minx=Math.min(...pts.map(q=>q.x)),maxx=Math.max(...pts.map(q=>q.x)),miny=Math.min(...pts.map(q=>q.y)),maxy=Math.max(...pts.map(q=>q.y));
  ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.z,view.z);ctx.strokeStyle='#0085d0';ctx.lineWidth=1.5/view.z;ctx.setLineDash([6/view.z,4/view.z]);ctx.strokeRect(minx-5/view.z,miny-5/view.z,maxx-minx+10/view.z,maxy-miny+10/view.z);ctx.restore();
 }
+// Window/door position is always defined by its supporting wall.
+function supportingWall(i){return page().items.find(w=>w.type==='wall'&&w.id===i.wallId)||null}
+function wallPlacement(i,wall){
+ const dx=wall.x2-wall.x1,dy=wall.y2-wall.y1,L=Math.hypot(dx,dy)||1;
+ const ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
+ const side=Number.isFinite(i.wallSide)?i.wallSide:0;
+ const origin={x:wall.x1+nx*side,y:wall.y1+ny*side};
+ const length=Math.hypot(i.x2-i.x1,i.y2-i.y1);
+ const mid={x:(i.x1+i.x2)/2,y:(i.y1+i.y2)/2};
+ const center=(mid.x-origin.x)*ux+(mid.y-origin.y)*uy;
+ return{ux,uy,origin,L,length,center};
+}
+function placeOpening(i,center,length){
+ const wall=supportingWall(i);if(!wall)return false;
+ const g=wallPlacement(i,wall);
+ const len=Math.max(.1,Math.min(length,g.L));
+ const c=Math.max(len/2,Math.min(g.L-len/2,center));
+ i.x1=g.origin.x+(c-len/2)*g.ux;i.y1=g.origin.y+(c-len/2)*g.uy;
+ i.x2=g.origin.x+(c+len/2)*g.ux;i.y2=g.origin.y+(c+len/2)*g.uy;
+ i.wallAxis={dx:wall.x2-wall.x1,dy:wall.y2-wall.y1};
+ return true;
+}
 function shiftObject(i,dx,dy){
  if(Number.isFinite(i.x))i.x+=dx;if(Number.isFinite(i.y))i.y+=dy;
  if(Number.isFinite(i.x1)){i.x1+=dx;i.x2+=dx;i.y1+=dy;i.y2+=dy}
@@ -443,7 +465,7 @@ function deleteObject(){
   if(!confirm('An dieser Wand befinden sich Fenster/Türen. Diese ebenfalls löschen?'))return;
   page().items=page().items.filter(o=>o.wallId!==i.id);
  }
- page().items=page().items.filter(o=>o!==i);selectedObject=null;objectMove=null;hideSelectActions();redo=[];changed();draw();
+ page().items=page().items.filter(o=>o!==i);selectedObject=null;objectMove=null;selectedAt=0;hideSelectActions();redo=[];changed();draw();
 }
 function editObject(){
  const i=selectedObject;if(!i)return;
@@ -455,6 +477,11 @@ function editObject(){
   const raw=prompt('Neue Länge in Zeichnungseinheiten (aktuell '+length.toFixed(1)+'):',length.toFixed(1));
   if(raw===null)return;const value=Number(raw.replace(',','.'));
   if(!Number.isFinite(value)||value<=0){alert('Bitte eine positive Zahl eingeben.');return}
+  if(['window','door'].includes(i.type)){
+   if(!supportingWall(i)){alert('Die zugehörige Wand fehlt. Bitte das Fenster/die Tür neu an einer Wand platzieren.');return}
+   const g=wallPlacement(i,supportingWall(i));
+   placeOpening(i,g.center,value);redo=[];changed();draw();return;
+  }
   const f=value/Math.max(.001,length);i.x2=i.x1+(i.x2-i.x1)*f;i.y2=i.y1+(i.y2-i.y1)*f;
   if(i.type==='wall')for(const o of page().items.filter(q=>q.wallId===i.id)){
    o.x1=i.x1+(o.x1-i.x1)*f;o.y1=i.y1+(o.y1-i.y1)*f;
@@ -465,8 +492,13 @@ function editObject(){
  }
 }
 function down(e){if($('numberdialog').open||$('textdialog').open)return;if(e.pointerType==='mouse'&&e.button===1){e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:'mouse'});gesture={pan:true,p,start:{...view}};return}e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(e.pointerType==='pen')stylusSeen=true;if(pointers.size===2){active=null;let ps=[...pointers.values()];gesture={distance:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:view.z,center:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}};gesture.anchor=world(gesture.center.x,gesture.center.y);draw();return}if(pointers.size>2)return;if(tool==='pan'){gesture={pan:true,p,start:{...view}};return}let a=world(p.x,p.y);if(tool==='select'){
- const hit=objectAt(a);selectedObject=hit;showSelectActions();
- if(hit)objectMove={item:hit,p:a,moved:false};draw();return;
+ const hit=objectAt(a),now=performance.now();
+ // First tap only selects. A second gesture after one second enables movement.
+ const ready=hit&&hit===selectedObject&&now-selectedAt>=1000;
+ if(hit!==selectedObject){selectedObject=hit;selectedAt=now}
+ showSelectActions();
+ if(ready)objectMove={item:hit,p:a,moved:false,startScreen:p,started:false};
+ draw();return;
 }if(tool==='photo'){
  const handle=photoHandleAt(a),item=selectedImage();
  if(handle&&item){
@@ -512,8 +544,22 @@ if(t==='measure'){if(!measureDraft){measureDraft={type:'measure',x1:a.x,y1:a.y,x
 if(t==='window'||t==='door'){let hit=nearestWall(a);if(!hit){saveState='Wand antippen';status();return}a=hit.point;let w=hit.wall;active={type:t,x1:a.x,y1:a.y,x2:a.x,y2:a.y,wallId:w.id||null,wallAxis:{dx:w.x2-w.x1,dy:w.y2-w.y1},wallSide:hit.side,wallOffset:w.wallOffset??20,color:GREEN,width:1};draw();return}
 if(t==='wall'&&wallEnd)a={...wallEnd};active={type:t==='square'?'rect':t==='circle'?'ellipse':t==='freeform'?'pen':t,id:uid(),...(t==='square'||t==='circle'?{squareShape:true}:{}),...(t==='wall'?{wallOffset:-30}:{}),color:page().kind==='checklist'&&t==='pen'?GREEN:t==='wall'?BLUE:t==='measure'?RED:color,width:t==='eraser'?eraserSize:width,...(['pen','eraser','freeform'].includes(t)?{points:[{...a,pressure:e.pointerType==='pen'?e.pressure:.5,time:e.timeStamp}],...(t==='pen'?{penType}: {})}:{x1:a.x,y1:a.y,x2:a.x,y2:a.y})};if(t==='eraser'){eraserCursor={...p,touch:e.pointerType==='touch'};if(e.pointerType==='touch')active.points[0].x-=60/view.z}draw()}
 function move(e){if(!pointers.has(e.pointerId))return;e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(pointers.size===2&&gesture&&!gesture.pan&&!gesture.photo){let ps=[...pointers.values()],dist=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),center={x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2};view.z=Math.max(.15,Math.min(30,gesture.z*dist/Math.max(1,gesture.distance)));view.x=center.x-gesture.anchor.x*view.z;view.y=center.y-gesture.anchor.y*view.z;draw();return}if(objectMove&&tool==='select'){
- const a=world(p.x,p.y),dx=a.x-objectMove.p.x,dy=a.y-objectMove.p.y;
- if(Math.hypot(dx,dy)>0){shiftObject(objectMove.item,dx,dy);objectMove.p=a;objectMove.moved=true;draw()}
+ const a=world(p.x,p.y),m=objectMove,dx=a.x-m.p.x,dy=a.y-m.p.y;
+ // Ignore the slight movement produced when touching down with the S Pen.
+ if(!m.started){
+  if(Math.hypot(p.x-m.startScreen.x,p.y-m.startScreen.y)<7)return;
+  m.started=true;
+ }
+ if(Math.hypot(dx,dy)>0){
+  if(['window','door'].includes(m.item.type)){
+   const wall=supportingWall(m.item);
+   if(wall){
+    const g=wallPlacement(m.item,wall);
+    placeOpening(m.item,g.center+dx*g.ux+dy*g.uy,g.length);
+   }else{saveState='Zugehörige Wand fehlt';status();return}
+  }else shiftObject(m.item,dx,dy);
+  m.p=a;m.moved=true;draw();
+ }
  return;
 }if(gesture?.pan){view.x=gesture.start.x+p.x-gesture.p.x;view.y=gesture.start.y+p.y-gesture.p.y;draw();return}if(gesture?.photo){
  const a=world(p.x,p.y),g=gesture,i=g.photo;
