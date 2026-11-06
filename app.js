@@ -135,7 +135,7 @@ if(item.type==='pen'&&['pressure','ballpoint'].includes(item.penType)&&item.poin
     }
     // Fast variable-width ink: draw connected strokes rather than thousands
     // of individually filled circles. Keep hairlines visible at low zoom.
-    const minVisible=1.1/view.z;
+    const minVisible=pdfRendering?0:1.1/view.z;
     ctx.lineCap="round";ctx.lineJoin="round";
     ctx.strokeStyle=item.color||color;
     ctx.fillStyle=item.color||color;
@@ -484,7 +484,8 @@ function pageBounds(p){
  const left=Math.min(...xs)-pad,top=Math.min(...ys)-pad;
  return{x:left,y:top,w:Math.max(20,Math.max(...xs)-Math.min(...xs)+2*pad),h:Math.max(20,Math.max(...ys)-Math.min(...ys)+2*pad)};
 }
-function exportPage(p,maxSide=7000){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(6,maxSide/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active;ctx=c;active=null;if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i);ctx=old;active=oldActive;return out}
+let pdfRendering=false;
+function exportPage(p,maxSide=7000){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(12,maxSide/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active,oldPdfRendering=pdfRendering;ctx=c;active=null;pdfRendering=true;try{if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i)}finally{ctx=old;active=oldActive;pdfRendering=oldPdfRendering}return out}
 function printPdf(){
  const win=window.open('','_blank');if(!win){alert('Bitte Pop-ups für den PDF-Export erlauben.');return}
  const pages=doc.pages.map(p=>({p,bb:pageBounds(p),src:exportPage(p).toDataURL('image/png')}));
@@ -536,7 +537,7 @@ function buildPdf(images){
 }
 async function pdfDocumentBlob(){
  const maxBytes=5*1024*1024,settings=[
-  [4500,.91],[4000,.86],[3500,.82],[3000,.77],[2600,.72],
+  [6000,.96],[5500,.94],[5000,.92],[4500,.90],[4000,.88],[3500,.84],[3000,.80],[2600,.75],
   [2200,.68],[1900,.63],[1600,.59],[1300,.53],[1050,.48],
   [850,.43],[650,.38],[480,.32],[320,.26]
  ];
@@ -607,7 +608,7 @@ $('pagerename').onclick=()=>{const i=pageMenuIndex;if(i<0)return;hidePageActions
 $('pageremove').onclick=()=>{const i=pageMenuIndex;if(i<0)return;hidePageActions();if(doc.pages.length===1){alert('Mindestens eine Seite muss bleiben.');return}if(!confirm(`Seite „${doc.pages[i].name}“ wirklich löschen?`))return;doc.pages.splice(i,1);if(pageIndex>=i)pageIndex=Math.max(0,pageIndex-(pageIndex===i?1:1));pageIndex=Math.min(pageIndex,doc.pages.length-1);selectedPhoto=null;redo=[];syncPage();fit();changed()};
 
 function addPage(kind='drawing',category='Küche'){let p=makePage(kind==='checklist'?category+'-Checkliste':`Seite ${doc.pages.length+1}`,kind==='checklist'?'a4p':page().paper,kind);if(kind==='checklist')p.category=category;doc.pages.push(p);pageIndex=doc.pages.length-1;selectedPhoto=null;redo=[];syncPage();fit();changed()}
-function addImage(file){if(!file)return;let img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{let max=Number($('quality').value),scale=Math.min(1,max/Math.max(img.width,img.height)),out=document.createElement('canvas');out.width=Math.max(1,Math.round(img.width*scale));out.height=Math.max(1,Math.round(img.height*scale));out.getContext('2d').drawImage(img,0,0,out.width,out.height);let src=out.toDataURL('image/jpeg',.83),w=Math.min(340,out.width),h=w*out.height/out.width,a=world(canvas.clientWidth/2,canvas.clientHeight/2);let item={id:uid(),type:'image',src,x:a.x-w/2,y:a.y-h/2,w,h,angle:0,locked:false};page().items.push(item);selectedPhoto=item.id;setTool('photo');changed();draw();URL.revokeObjectURL(url)};img.onerror=()=>{URL.revokeObjectURL(url);alert('Bild konnte nicht geladen werden.');};img.src=url}
+function addImage(file){if(!file)return;let img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{let max=Number($('quality').value),scale=Math.min(1,max/Math.max(img.width,img.height)),out=document.createElement('canvas');out.width=Math.max(1,Math.round(img.width*scale));out.height=Math.max(1,Math.round(img.height*scale));out.getContext('2d').drawImage(img,0,0,out.width,out.height);let src=out.toDataURL('image/jpeg',.94),w=Math.min(340,out.width),h=w*out.height/out.width,a=world(canvas.clientWidth/2,canvas.clientHeight/2);let item={id:uid(),type:'image',src,x:a.x-w/2,y:a.y-h/2,w,h,angle:0,locked:false};page().items.push(item);selectedPhoto=item.id;setTool('photo');changed();draw();URL.revokeObjectURL(url)};img.onerror=()=>{URL.revokeObjectURL(url);alert('Bild konnte nicht geladen werden.');};img.src=url}
 async function showProjects(){let arr=await getAll();arr.sort((a,b)=>a.name.localeCompare(b.name));$('projectlist').replaceChildren();for(let d of arr){let row=document.createElement('div');row.className='project';let open=document.createElement('button');open.textContent=d.name;open.onclick=()=>{load(d.id);$('projectdialog').close()};let del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!confirm(`„${d.name}“ löschen?`))return;let db=await dbPromise;await new Promise((ok,err)=>{let tx=db.transaction('docs','readwrite');tx.objectStore('docs').delete(d.id);tx.oncomplete=ok;tx.onerror=err});row.remove();if(d.id===doc.id)newDoc()};row.append(open,del);$('projectlist').append(row)}$('projectdialog').showModal()}
 function newDoc(){doc={id:uid(),name:'Neue Skizze',pages:[makePage()]};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();changed()}
 canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('wheel',e=>{e.preventDefault();let p=eventPoint(e);zoomAt(e.deltaY<0?1.1:.9,p.x,p.y)},{passive:false});

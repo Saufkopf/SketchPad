@@ -16,3 +16,6 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 
 
 1.7.5: Einheitliches PDF-Exportmenü mit lokal speichern/teilen. JPEG-Qualität und Rasterauflösung werden schrittweise angepasst, bis die PDF maximal 5 MiB hat. Fotos bleiben Rasterbilder; hohe Zoomstufen sind nicht unbegrenzt scharf.
+
+
+1.7.6: PDF-Stiftlinien nicht mehr künstlich durch Display-Mindestbreite verdickt; Fotoimport standardmäßig 4000 px und JPEG 94%; PDF zunächst höhere Renderauflösung/Qualität, adaptive Begrenzung 5 MB. Bestehende komprimierte Fotos werden nicht nachträglich schärfer.
