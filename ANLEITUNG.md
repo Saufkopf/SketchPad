@@ -10,3 +10,6 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 1.7.2: Beim Öffnen vorhandener Zeichnungen auf den tatsächlichen Inhalt zentrieren. Gesamtansicht auch für große Zeichnungen.
 
 1.7.3: Fehlende Seitenverwaltung (syncPage, Seiten-Kontextmenü) wiederhergestellt. Keine Datenmigration.
+
+
+1.7.4: Foto löschen über eigenen Button im unteren Foto-Bereich (Foto vorher auswählen). PDF teilen über Android-Teilen-Dialog, dort Gmail wählen; andernfalls PDF herunterladen und in Gmail anhängen.

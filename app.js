@@ -236,10 +236,18 @@ function drawPhotoHandles(){
  for(const [name,q] of Object.entries(h)){ctx.beginPath();ctx.arc(q.x,q.y,6/view.z,0,Math.PI*2);ctx.fillStyle=name==='rotate'?'#ffcc62':'#ffffff';ctx.fill();ctx.stroke()}
  ctx.restore();
 }
+function deleteSelectedPhoto(){
+ const i=selectedImage();
+ if(!i){alert('Bitte zuerst das Foto mit dem Foto-Werkzeug antippen.');return}
+ if(confirm('Ausgewähltes Foto wirklich löschen?')){
+  page().items=page().items.filter(x=>x.id!==i.id);
+  selectedPhoto=null;changed();draw();
+ }
+}
 function photoActionMenu(){
  const i=selectedImage();if(!i)return;
  const action=prompt('Foto: 1 = Löschen, 2 = Sperren/Entsperren, 3 = Drehen (90°)', '1');
- if(action==='1'){if(confirm('Ausgewähltes Foto wirklich löschen?')){page().items=page().items.filter(x=>x.id!==i.id);selectedPhoto=null;changed();draw()}}
+ if(action==='1')deleteSelectedPhoto();
  else if(action==='2'){i.locked=!i.locked;changed();draw()}
  else if(action==='3'){i.angle=(i.angle||0)+Math.PI/2;changed();draw()}
 }
@@ -496,6 +504,52 @@ function printPdf(){
  </style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),800)<\/script></body></html>`);win.document.close();
 }
 
+
+// Portable PDF with embedded JPEG pages, created locally without an external service.
+function pdfDocumentBlob(){
+ const enc=new TextEncoder(),parts=[],offsets=[0];let length=0;
+ const add=data=>{const bytes=typeof data==='string'?enc.encode(data):data;parts.push(bytes);length+=bytes.length};
+ const object=(id,body)=>{offsets[id]=length;add(`${id} 0 obj\n`);add(body);add('\nendobj\n')};
+ const images=doc.pages.map(p=>{
+  const bb=pageBounds(p),cv=exportPage(p);
+  // JPEG compression keeps shared PDFs practical, including camera images.
+  const data=cv.toDataURL('image/jpeg',.83).split(',')[1];
+  const bin=atob(data),bytes=new Uint8Array(bin.length);
+  for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
+  const landscape=p.kind!=='checklist'&&bb.w>bb.h;
+  return {bytes,w:cv.width,h:cv.height,pw:landscape?841.89:595.28,ph:landscape?595.28:841.89};
+ });
+ add('%PDF-1.4\n');
+ object(1,'<< /Type /Catalog /Pages 2 0 R >>');
+ object(2,`<< /Type /Pages /Kids [${images.map((_,i)=>3+i*3+' 0 R').join(' ')}] /Count ${images.length} >>`);
+ images.forEach((im,i)=>{
+  const pageId=3+i*3,imgId=pageId+1,contentId=pageId+2;
+  const margin=20,ratio=Math.min((im.pw-2*margin)/im.w,(im.ph-2*margin)/im.h);
+  const w=im.w*ratio,h=im.h*ratio,x=(im.pw-w)/2,y=(im.ph-h)/2;
+  const content=`q\n${w.toFixed(3)} 0 0 ${h.toFixed(3)} ${x.toFixed(3)} ${y.toFixed(3)} cm\n/Im0 Do\nQ\n`;
+  object(pageId,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${im.pw} ${im.ph}] /Resources << /XObject << /Im0 ${imgId} 0 R >> >> /Contents ${contentId} 0 R >>`);
+  offsets[imgId]=length;add(`${imgId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`);add(im.bytes);add('\nendstream\nendobj\n');
+  object(contentId,`<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream`);
+ });
+ const xref=length,total=2+images.length*3;
+ add(`xref\n0 ${total+1}\n0000000000 65535 f \n`);
+ for(let i=1;i<=total;i++)add(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);
+ add(`trailer\n<< /Size ${total+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+ return new Blob(parts,{type:'application/pdf'});
+}
+async function sharePdf(){
+ let blob;
+ try{blob=pdfDocumentBlob()}catch(err){alert('PDF-Erstellung fehlgeschlagen: '+err.message);return}
+ const file=new File([blob],safeName()+'.pdf',{type:'application/pdf'});
+ try{
+  if(navigator.canShare?.({files:[file]})&&navigator.share){
+   await navigator.share({files:[file],title:safeName(),text:'SketchPad-Zeichnung als PDF'});
+   return;
+  }
+ }catch(err){if(err.name==='AbortError')return;console.warn('PDF-Teilen fehlgeschlagen',err)}
+ download(file.name,blob);
+ alert('Die PDF wurde gespeichert. Bitte Gmail öffnen, eine E-Mail erstellen und die heruntergeladene PDF als Anhang hinzufügen. Direktes Teilen wird von diesem Browser nicht unterstützt.');
+}
 // Page navigation helpers restored after the photo-editor refactor.
 let pageMenuIndex=-1;
 function hidePageActions(){
@@ -665,7 +719,7 @@ $('shapesbutton').onclick=()=>{updateShapeCurrent();syncShapeWidth();renderShape
 document.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>{shapeChoice=b.dataset.shape;setTool(shapeChoice);$('shapesdialog').close();$('shapesbutton').title='Formen: '+b.textContent.trim()});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 $('erasersize').oninput=e=>setEraserSize(e.target.value);syncEraserPopup();$('width').oninput=e=>penSetWidth(e.target.value);$('widthpreset').onchange=e=>penSetWidth(e.target.value?PEN_PT_STOPS[PEN_SIZE_LABELS.indexOf(Number(e.target.value))]:0.25);$('paper').onchange=e=>{page().paper=e.target.value;fit();changed()};$('grid').onchange=e=>{page().grid=e.target.checked;draw();changed()};$('docname').oninput=changed;
-$('undo').onclick=()=>{if(page().items.length){redo.push(page().items.pop());draw();changed()}};$('redo').onclick=()=>{if(redo.length){page().items.push(redo.pop());draw();changed()}};$('fit').onclick=fit;$('more').onclick=()=>$('options').showModal();$('close').onclick=()=>$('options').close();$('new').onclick=async()=>{if(confirm('Neues Projekt? Das bisherige bleibt gespeichert.')){await save();newDoc();$('options').close()}};$('save').onclick=()=>save();$('projects').onclick=()=>{$('options').close();showProjects()};$('closeprojects').onclick=()=>$('projectdialog').close();$('png').onclick=()=>exportPage(page()).toBlob(b=>download(safeName()+`_Seite${pageIndex+1}.png`,b));$('pdf').onclick=printPdf;$('json').onclick=async()=>{await save();download(safeName()+'.json',new Blob([JSON.stringify(doc)],{type:'application/json'}))};$('importbtn').onclick=()=>$('import').click();$('import').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=normalize(JSON.parse(await f.text()));if(!Array.isArray(d.pages)||d.pages.some(p=>!Array.isArray(p.items)||!['infinite',...Object.keys(SIZES)].includes(p.paper)))throw Error('Ungültiges Projekt');doc={...d,id:uid(),name:String(d.name||'Import').slice(0,120)};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();await save();$('options').close()}catch(err){alert('Import fehlgeschlagen: '+err.message)}e.target.value=''};
+$('undo').onclick=()=>{if(page().items.length){redo.push(page().items.pop());draw();changed()}};$('redo').onclick=()=>{if(redo.length){page().items.push(redo.pop());draw();changed()}};$('fit').onclick=fit;$('more').onclick=()=>$('options').showModal();$('close').onclick=()=>$('options').close();$('new').onclick=async()=>{if(confirm('Neues Projekt? Das bisherige bleibt gespeichert.')){await save();newDoc();$('options').close()}};$('save').onclick=()=>save();$('projects').onclick=()=>{$('options').close();showProjects()};$('closeprojects').onclick=()=>$('projectdialog').close();$('png').onclick=()=>exportPage(page()).toBlob(b=>download(safeName()+`_Seite${pageIndex+1}.png`,b));$('pdf').onclick=printPdf;$('sharepdf').onclick=sharePdf;$('json').onclick=async()=>{await save();download(safeName()+'.json',new Blob([JSON.stringify(doc)],{type:'application/json'}))};$('importbtn').onclick=()=>$('import').click();$('import').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=normalize(JSON.parse(await f.text()));if(!Array.isArray(d.pages)||d.pages.some(p=>!Array.isArray(p.items)||!['infinite',...Object.keys(SIZES)].includes(p.paper)))throw Error('Ungültiges Projekt');doc={...d,id:uid(),name:String(d.name||'Import').slice(0,120)};pageIndex=0;redo=[];$('docname').value=doc.name;syncPage();fit();await save();$('options').close()}catch(err){alert('Import fehlgeschlagen: '+err.message)}e.target.value=''};
 // Camera preview via getUserMedia: works independently of Android file-input capture handling.
 let cameraStream=null;
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}$('cameraoverlay').hidden=true;$('cameravideo').srcObject=null}
@@ -693,7 +747,7 @@ $('addpage').onclick=()=>addPage();$('checktype').onchange=e=>{if(e.target.value
   e.preventDefault();photoActionMenu();
  }
 });
-if($('photodelete'))$('photodelete').onclick=()=>{if(!selectedImage()){alert('Foto zuerst mit dem Foto-Werkzeug antippen.');return}photoActionMenu()};$('photolock').ondblclick=()=>{let p=page().items.find(i=>i.id===selectedPhoto);if(!p)return;let factor=Number(prompt('Fotogröße in % (z. B. 120):',100));if(factor>5&&factor<1000){p.w*=factor/100;p.h*=factor/100;let deg=Number(prompt('Drehung in Grad (0, 90, 180, 270):',0));if(Number.isFinite(deg))p.angle=(p.angle||0)+deg*Math.PI/180;changed();draw()}};$('photolock').onclick=()=>{let p=page().items.find(i=>i.id===selectedPhoto);if(!p){alert('Foto zuerst mit dem Foto-Werkzeug antippen.');return}p.locked=!p.locked;$('photolock').textContent=p.locked?'🔓 Foto':'🔒 Foto';changed();draw()};$('deletepage').onclick=()=>{if(doc.pages.length===1){alert('Mindestens eine Seite muss bleiben.');return}if(confirm('Diese Seite wirklich löschen?')){doc.pages.splice(pageIndex,1);pageIndex=Math.max(0,pageIndex-1);syncPage();fit();changed();$('options').close()}};
+if($('photodelete'))$('photodelete').onclick=deleteSelectedPhoto;$('photolock').ondblclick=()=>{let p=page().items.find(i=>i.id===selectedPhoto);if(!p)return;let factor=Number(prompt('Fotogröße in % (z. B. 120):',100));if(factor>5&&factor<1000){p.w*=factor/100;p.h*=factor/100;let deg=Number(prompt('Drehung in Grad (0, 90, 180, 270):',0));if(Number.isFinite(deg))p.angle=(p.angle||0)+deg*Math.PI/180;changed();draw()}};$('photolock').onclick=()=>{let p=page().items.find(i=>i.id===selectedPhoto);if(!p){alert('Foto zuerst mit dem Foto-Werkzeug antippen.');return}p.locked=!p.locked;$('photolock').textContent=p.locked?'🔓 Foto':'🔒 Foto';changed();draw()};$('deletepage').onclick=()=>{if(doc.pages.length===1){alert('Mindestens eine Seite muss bleiben.');return}if(confirm('Diese Seite wirklich löschen?')){doc.pages.splice(pageIndex,1);pageIndex=Math.max(0,pageIndex-1);syncPage();fit();changed();$('options').close()}};
 for(let digit of ['1','2','3','4','5','6','7','8','9',',','0','⌫']){let b=document.createElement('button');b.textContent=digit;b.onclick=()=>{let el=$('numberinput');el.value=digit==='⌫'?el.value.slice(0,-1):el.value+(digit===','?',':digit)};$('numberpad').append(b)}window.addEventListener('blur',()=>{resetInput();draw()});window.addEventListener('resize',size);document.addEventListener('visibilitychange',()=>{if(document.hidden){resetInput();if(dirty)save()}});window.addEventListener('pagehide',()=>{if(dirty)save()});setInterval(()=>{if(dirty)save()},120000);
 (async()=>{size();let id=localStorage.getItem('sketchpad-current');if(id)await load(id);else{syncPage();startView();await save()}if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js').catch(console.error)})();
 
