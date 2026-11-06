@@ -14,7 +14,7 @@ async function save(){clearTimeout(saveTimer);doc.name=$('docname').value.trim()
 function changed(){revision++;dirty=true;saveState='Ungespeichert';status();clearTimeout(saveTimer);saveTimer=setTimeout(save,350)}
 async function getAll(){let s=await store();return new Promise((ok,err)=>{let r=s.getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>err(r.error)})}
 function normalize(d){if(!Array.isArray(d.pages)){d.pages=[{id:uid(),name:'Seite 1',paper:d.paper||'infinite',grid:d.grid!==false,kind:'drawing',items:d.items||[]}]}d.pages.forEach((p,i)=>{p.id||=uid();p.name||=`Seite ${i+1}`;p.paper||='infinite';p.items||=[];p.kind||='drawing'});return d}
-async function load(id){let s=await store();let d=await new Promise(ok=>{let r=s.get(id);r.onsuccess=()=>ok(r.result)});if(!d)return;doc=normalize(d);pageIndex=0;redo=[];selectedPhoto=null;$('docname').value=doc.name;localStorage.setItem('sketchpad-current',id);syncPage();startView();saveState='Gespeichert';status()}
+async function load(id){let s=await store();let d=await new Promise(ok=>{let r=s.get(id);r.onsuccess=()=>ok(r.result)});if(!d)return;doc=normalize(d);pageIndex=0;redo=[];selectedPhoto=null;$('docname').value=doc.name;localStorage.setItem('sketchpad-current',id);syncPage();fit();saveState='Gespeichert';status()}
 function size(){let r=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1;canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
 const dims=()=>[canvas.clientWidth,canvas.clientHeight],world=(x,y)=>({x:(x-view.x)/view.z,y:(y-view.y)/view.z}),screen=p=>({x:p.x*view.z+view.x,y:p.y*view.z+view.y});
 function bounds(p=page()){if(p.paper==='infinite')return null;let[w,h]=SIZES[p.paper];return{w:w*MM,h:h*MM}}
@@ -25,7 +25,7 @@ function fit(){
  const b=hasContent?pageBounds(page()):(paper?{x:0,y:0,w:paper.w,h:paper.h}:null);
  if(b){
   const pad=32;
-  view.z=Math.max(.15,Math.min(30,(w-pad*2)/Math.max(1,b.w),(h-pad*2)/Math.max(1,b.h)));
+  view.z=Math.max(.005,Math.min(30,(w-pad*2)/Math.max(1,b.w),(h-pad*2)/Math.max(1,b.h)));
   view.x=(w-b.w*view.z)/2-b.x*view.z;
   view.y=(h-b.h*view.z)/2-b.y*view.z;
  }else view={x:w/2,y:h/2,z:1};
@@ -202,7 +202,7 @@ function drawWallJoins(p){
  ctx.restore();
 }
 function renderPage(p){let b=bounds(p);ctx.fillStyle='#fff';if(b){ctx.shadowColor='#0003';ctx.shadowBlur=14/view.z;ctx.fillRect(0,0,b.w,b.h);ctx.shadowBlur=0;ctx.beginPath();ctx.rect(0,0,b.w,b.h);ctx.clip()}else{let[w,h]=dims(),a=world(0,0),z=world(w,h);ctx.fillRect(a.x,a.y,z.x-a.x,z.y-a.y)}if(p.grid){let step=20*MM,[w,h]=dims(),a=world(0,0),z=world(w,h),left=b?0:a.x,top=b?0:a.y,right=b?b.w:z.x,bottom=b?b.h:z.y;ctx.strokeStyle='#e5ebf0';ctx.lineWidth=.7/view.z;ctx.beginPath();let count=0;for(let x=Math.ceil(left/step)*step;x<right&&count++<300;x+=step){ctx.moveTo(x,top);ctx.lineTo(x,bottom)}count=0;for(let y=Math.ceil(top/step)*step;y<bottom&&count++<300;y+=step){ctx.moveTo(left,y);ctx.lineTo(right,y)}ctx.stroke()}if(p.kind==='checklist')drawChecklist(p);for(let item of p.items)drawItem(item);if(active)drawItem(active);if(measureDraft)drawItem(measureDraft)}
-function draw(){if(!canvas.width)return;let[w,h]=dims();ctx.clearRect(0,0,w,h);ctx.fillStyle='#dfe5eb';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.z,view.z);renderPage(page());ctx.restore();drawTextSelection();drawPhotoHandles();if(selectedMeasure&&tool==='measure'){
+function draw(){if(!canvas.width)return;let[w,h]=dims();ctx.clearRect(0,0,w,h);ctx.fillStyle='#dfe5eb';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.z,view.z);try{renderPage(page())}catch(error){console.error('SketchPad: Zeichenfehler',error)}ctx.restore();drawTextSelection();drawPhotoHandles();if(selectedMeasure&&tool==='measure'){
  const m=page().items.find(i=>i===selectedMeasure);if(m){const dx=m.x2-m.x1,dy=m.y2-m.y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,off=Number(m.offset||0);const pts=[{x:m.x1,y:m.y1},{x:m.x2,y:m.y2},{x:(m.x1+m.x2)/2+nx*off,y:(m.y1+m.y2)/2+ny*off}];for(const q of pts){const t=screen(q);ctx.beginPath();ctx.arc(t.x,t.y,6,0,Math.PI*2);ctx.fillStyle='#f7f7ff';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#cf298b';ctx.stroke()}}}
  if(eraserCursor){ctx.beginPath();ctx.arc(eraserCursor.x-(eraserCursor.touch?60:0),eraserCursor.y,eraserSize*view.z/2,0,Math.PI*2);ctx.strokeStyle='#e34040';ctx.lineWidth=1.5;ctx.stroke()}status()}
 function eventPoint(e){let r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}

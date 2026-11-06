@@ -6,3 +6,5 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 
 
 1.7.1: Kritischer Startfehler behoben (nicht vorhandener Foto-Löschen-Button verursachte JavaScript-Abbruch). Keine Änderungen am Projektspeicher.
+
+1.7.2: Beim Öffnen vorhandener Zeichnungen auf den tatsächlichen Inhalt zentrieren. Gesamtansicht auch für große Zeichnungen.
