@@ -187,3 +187,5 @@ body{position:relative}
 
 /* v1.7.0: long-press on tool buttons must never select their text */
 #tools,#tools button,#tools button *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;touch-action:manipulation}
+
+#selectactions{position:fixed;z-index:30;bottom:54px;left:72px;background:#fff;border:1px solid #c7d2df;border-radius:9px;box-shadow:0 4px 16px #0002;padding:6px;display:flex;align-items:center;gap:7px}#selectactions[hidden]{display:none}#selectactions button{padding:7px 9px;border:1px solid #ccd3da;border-radius:6px;background:#f7f9fc}#selectname{font-weight:600;font-size:12px;padding:0 6px}

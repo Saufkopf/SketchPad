@@ -22,3 +22,6 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 
 
 Version 1.7.7: Foto-Werkzeug: Foto antippen, dann Foto-Menü > Ausgewähltes Foto löschen. Wand-Menü > Fenster/Tür löschen, danach betreffendes Element antippen und bestätigen. Radierer stellt unter dem Strich liegende Fotos wieder her und radiert nur darüber gezeichnete Striche. PDF-Einstellungen unverändert.
+
+
+1.7.8: Auswahl-Werkzeug links. Objekt antippen, mit Stift verschieben, Bearbeiten oder Löschen. Bei Wänden werden zugehörige Fenster/Türen mitverschoben. PDF und Speicherformat unverändert.
