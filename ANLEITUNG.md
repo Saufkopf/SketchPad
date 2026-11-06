@@ -19,3 +19,6 @@ Version 1.6.8: Kamera startet mit Live-Vorschau über Browser-Kamerazugriff (HTT
 
 
 1.7.6: PDF-Stiftlinien nicht mehr künstlich durch Display-Mindestbreite verdickt; Fotoimport standardmäßig 4000 px und JPEG 94%; PDF zunächst höhere Renderauflösung/Qualität, adaptive Begrenzung 5 MB. Bestehende komprimierte Fotos werden nicht nachträglich schärfer.
+
+
+Version 1.7.7: Foto-Werkzeug: Foto antippen, dann Foto-Menü > Ausgewähltes Foto löschen. Wand-Menü > Fenster/Tür löschen, danach betreffendes Element antippen und bestätigen. Radierer stellt unter dem Strich liegende Fotos wieder her und radiert nur darüber gezeichnete Striche. PDF-Einstellungen unverändert.

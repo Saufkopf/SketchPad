@@ -31,6 +31,7 @@ function fit(){
  }else view={x:w/2,y:h/2,z:1};
  draw();
 }
+let exportRenderPage=null;
 function path(item){let p=item.points||[];if(['pen','eraser'].includes(item.type)){if(!p.length)return;ctx.moveTo(p[0].x,p[0].y);if(p.length===1){ctx.lineTo(p[0].x+.01,p[0].y+.01)}else if(p.length===2)ctx.lineTo(p[1].x,p[1].y);else{for(let i=1;i<p.length-1;i++){let m={x:(p[i].x+p[i+1].x)/2,y:(p[i].y+p[i+1].y)/2};ctx.quadraticCurveTo(p[i].x,p[i].y,m.x,m.y)}ctx.lineTo(p.at(-1).x,p.at(-1).y)}}else if(['line','wall','window','door','measure'].includes(item.type)){ctx.moveTo(item.x1,item.y1);ctx.lineTo(item.x2,item.y2)}else if(item.type==='rect')ctx.rect(item.x1,item.y1,item.x2-item.x1,item.y2-item.y1);else if(item.type==='ellipse'){let x=(item.x1+item.x2)/2,y=(item.y1+item.y2)/2;ctx.ellipse(x,y,Math.max(.1,Math.abs(item.x2-item.x1)/2),Math.max(.1,Math.abs(item.y2-item.y1)/2),0,0,Math.PI*2)}}
 function drawItem(item){ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=item.color||color;ctx.lineWidth=item.width||3;
 if(item.type==='image'){let img=imageCache.get(item.src);if(!img){img=new Image();img.onload=draw;img.src=item.src;imageCache.set(item.src,img)}if(img.complete&&img.naturalWidth){ctx.translate(item.x,item.y);ctx.rotate(item.angle||0);ctx.drawImage(img,0,0,item.w,item.h);}ctx.restore();return}
@@ -175,7 +176,27 @@ if(item.type==='pen'&&['pressure','ballpoint'].includes(item.penType)&&item.poin
   ctx.restore();return;
 }
 if(item.type==='pen'&&item.penType==='marker'){ctx.globalAlpha=.32;ctx.lineCap='butt';ctx.lineWidth=(item.width||3)*3;}
- if(item.type==='eraser'){ctx.strokeStyle='#fff';ctx.lineWidth=item.width||28}ctx.beginPath();path(item);ctx.stroke();ctx.restore()}
+ if(item.type==='eraser'){
+ ctx.strokeStyle='#fff';ctx.lineWidth=item.width||28;
+ ctx.beginPath();path(item);ctx.stroke();
+ // The eraser affects drawn ink, never the underlying camera/photo layer.
+ // Restore photos only inside the erased path; annotations outside remain unchanged.
+ ctx.save();ctx.beginPath();
+ const pts=item.points||[],r=(item.width||28)/2;
+ for(let k=0;k<pts.length;k++){
+  const a=pts[k],b=pts[Math.min(k+1,pts.length-1)];
+  const distance=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(distance/Math.max(.5,r*.6)));
+  for(let j=0;j<steps;j++){const t=j/steps;ctx.moveTo(a.x+(b.x-a.x)*t+r,a.y+(b.y-a.y)*t);ctx.arc(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,r,0,Math.PI*2)}
+ }
+ if(pts.length)ctx.clip();
+ for(const photo of (pdfRendering?exportRenderPage||page():page()).items){
+  if(photo.type!=='image')continue;
+  const img=imageCache.get(photo.src);
+  if(img&&img.complete&&img.naturalWidth){ctx.save();ctx.translate(photo.x,photo.y);ctx.rotate(photo.angle||0);ctx.drawImage(img,0,0,photo.w,photo.h);ctx.restore()}
+ }
+ ctx.restore();ctx.restore();return;
+ }
+ ctx.beginPath();path(item);ctx.stroke();ctx.restore()}
 function drawChecklist(p){let lines=[(p.category||'Küche').toUpperCase()+' – KUNDENWÜNSCHE','Fronten – Farbe / Dekor','Korpus – Farbe / Dekor','Kombinationsfarbe / Dekor','Laden / Innenausstattung','Arbeitsplatte – Material / Dekor','Griffe / grifflos / Griffmulden','Spüle','Armatur','Abfallsammler','ELEKTROGERÄTE','☐ Backrohr       ☐ Kochfeld / Induktion','☐ Geschirrspüler   ☐ Kühlschrank','☐ Gefrierschrank   ☐ Mikrowelle','☐ Dampfgarer       ☐ Dunstabzug','Sonstige Wünsche / Notizen'];if(p.category&&p.category!=='Küche')lines=[p.category.toUpperCase()+' – KUNDENWÜNSCHE','Farbe / Dekor','Material','Ausführung','Beschläge','Griffe','Beleuchtung','Besondere Wünsche','Maße / Hinweise','Weitere Notizen'];ctx.save();ctx.fillStyle='#24334b';ctx.strokeStyle='#c7d2df';let w=bounds(p)?.w||794;lines.forEach((s,i)=>{let y=42+i*52;ctx.font=(i===0||i===10)?'bold 18px sans-serif':'15px sans-serif';ctx.fillText(s,35,y);if(i!==0&&i!==10){ctx.beginPath();ctx.moveTo(35,y+29);ctx.lineTo(w-35,y+29);ctx.stroke()}});ctx.restore()}
 function drawWallJoins(p){
  // One pass for each pair of walls sharing a guide-line vertex. The far face
@@ -207,7 +228,7 @@ function draw(){if(!canvas.width)return;let[w,h]=dims();ctx.clearRect(0,0,w,h);c
  if(eraserCursor){ctx.beginPath();ctx.arc(eraserCursor.x-(eraserCursor.touch?60:0),eraserCursor.y,eraserSize*view.z/2,0,Math.PI*2);ctx.strokeStyle='#e34040';ctx.lineWidth=1.5;ctx.stroke()}status()}
 function eventPoint(e){let r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function zoomAt(f,x,y){let a=world(x,y);view.z=Math.max(.15,Math.min(30,view.z*f));view.x=x-a.x*view.z;view.y=y-a.y*view.z;draw()}
-function setTool(t){selectedText=null;selectedMeasure=null;measureEdit=null;if(t!=='wall')finishWall();measureDraft=null;measureStage=0;resetInput();tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t||(b.dataset.tool==='wall'&&['window','door'].includes(t))));$('shapesbutton').classList.toggle('active',['line','rect','ellipse','square','circle','freeform'].includes(t));draw()}
+function setTool(t){selectedText=null;selectedMeasure=null;measureEdit=null;if(t!=='wall')finishWall();measureDraft=null;measureStage=0;resetInput();tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t||(b.dataset.tool==='wall'&&['window','door','opening-delete'].includes(t))));$('shapesbutton').classList.toggle('active',['line','rect','ellipse','square','circle','freeform'].includes(t));draw()}
 function photoLocal(item,p){
  const dx=p.x-item.x,dy=p.y-item.y,angle=-(item.angle||0);
  return{x:dx*Math.cos(angle)-dy*Math.sin(angle),y:dx*Math.sin(angle)+dy*Math.cos(angle)};
@@ -353,6 +374,17 @@ function measureLabelAt(a){
  return null;
 }
 
+function openingAt(point){
+ const radius=Math.max(2,15/view.z);
+ for(const item of [...page().items].reverse()){
+  if(item.type!=='window'&&item.type!=='door')continue;
+  const dx=item.x2-item.x1,dy=item.y2-item.y1,len2=dx*dx+dy*dy;
+  const t=len2?Math.max(0,Math.min(1,((point.x-item.x1)*dx+(point.y-item.y1)*dy)/len2)):0;
+  const dist=Math.hypot(point.x-(item.x1+t*dx),point.y-(item.y1+t*dy));
+  if(dist<=radius)return item;
+ }
+ return null;
+}
 function down(e){if($('numberdialog').open||$('textdialog').open)return;if(e.pointerType==='mouse'&&e.button===1){e.preventDefault();let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:'mouse'});gesture={pan:true,p,start:{...view}};return}e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch{}let p=eventPoint(e);pointers.set(e.pointerId,{...p,type:e.pointerType});if(e.pointerType==='pen')stylusSeen=true;if(pointers.size===2){active=null;let ps=[...pointers.values()];gesture={distance:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:view.z,center:{x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2}};gesture.anchor=world(gesture.center.x,gesture.center.y);draw();return}if(pointers.size>2)return;if(tool==='pan'){gesture={pan:true,p,start:{...view}};return}let a=world(p.x,p.y);if(tool==='photo'){
  const handle=photoHandleAt(a),item=selectedImage();
  if(handle&&item){
@@ -363,6 +395,13 @@ function down(e){if($('numberdialog').open||$('textdialog').open)return;if(e.poi
  if(hit){selectedPhoto=hit.id;gesture={photo:hit,mode:'move',start:{x:hit.x,y:hit.y,w:hit.w,h:hit.h,angle:hit.angle||0},p:a,moved:false};draw()}
  else{selectedPhoto=null;draw()}
  return;
+}if(tool==='opening-delete'){
+ const hit=openingAt(a);
+ if(hit&&confirm((hit.type==='window'?'Fenster':'Tür')+' wirklich löschen?')){
+  page().items=page().items.filter(i=>i!==hit);
+  redo=[];changed();draw();
+ }else if(!hit){saveState='Fenster oder Tür antippen';status()}
+ resetInput();return;
 }let t=(e.pointerType==='touch'&&stylusSeen&&$('stylus').checked)?'eraser':tool;
 if(t==='text'){
  const handle=textHandleAt(a);
@@ -485,7 +524,7 @@ function pageBounds(p){
  return{x:left,y:top,w:Math.max(20,Math.max(...xs)-Math.min(...xs)+2*pad),h:Math.max(20,Math.max(...ys)-Math.min(...ys)+2*pad)};
 }
 let pdfRendering=false;
-function exportPage(p,maxSide=7000){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(12,maxSide/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active,oldPdfRendering=pdfRendering;ctx=c;active=null;pdfRendering=true;try{if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i)}finally{ctx=old;active=oldActive;pdfRendering=oldPdfRendering}return out}
+function exportPage(p,maxSide=7000){let bb=pageBounds(p),out=document.createElement('canvas'),c=out.getContext('2d'),scale=Math.min(12,maxSide/Math.max(bb.w,bb.h));out.width=Math.max(1,Math.ceil(bb.w*scale));out.height=Math.max(1,Math.ceil(bb.h*scale));c.fillStyle='white';c.fillRect(0,0,out.width,out.height);c.setTransform(scale,0,0,scale,-bb.x*scale,-bb.y*scale);let old=ctx,oldActive=active,oldPdfRendering=pdfRendering,oldExportRenderPage=exportRenderPage;ctx=c;active=null;pdfRendering=true;exportRenderPage=p;try{if(p.kind==='checklist')drawChecklist(p);for(let i of p.items)drawItem(i)}finally{ctx=old;active=oldActive;pdfRendering=oldPdfRendering;exportRenderPage=oldExportRenderPage}return out}
 function printPdf(){
  const win=window.open('','_blank');if(!win){alert('Bitte Pop-ups für den PDF-Export erlauben.');return}
  const pages=doc.pages.map(p=>({p,bb:pageBounds(p),src:exportPage(p).toDataURL('image/png')}));
@@ -615,7 +654,7 @@ canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});canv
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
  if(b.dataset.tool==='pen'&&tool==='pen'){openPenPopup(b);syncPenDialog()}
  else if(b.dataset.tool==='eraser'){setTool('eraser');openEraserPopup(b)}
- else if(b.dataset.tool==='photo'){setTool('photo');openPhotoFlyout(b)}
+ else if(b.dataset.tool==='photo'){if(tool!=='photo')setTool('photo');openPhotoFlyout(b)}
  else setTool(b.dataset.tool)
 });
 function hidePhotoFlyout(){$('photoflyout').hidden=true}
@@ -774,7 +813,7 @@ $('camerashutter').onclick=()=>{
   c.getContext('2d').drawImage(v,0,0);
   c.toBlob(blob=>{stopCamera();if(blob)addImage(new File([blob],'aufnahme.jpg',{type:'image/jpeg'}));else alert('Foto konnte nicht erstellt werden.')},'image/jpeg',.9);
 };
-$('addpage').onclick=()=>addPage();$('checktype').onchange=e=>{if(e.target.value){addPage('checklist',e.target.value);e.target.value=''}};$('addphoto').onclick=()=>$('photofile').click();$('takephoto').onclick=openCamera;$('photoflycamera').onclick=openCamera;$('photoflygallery').onclick=()=>{hidePhotoFlyout();$('photofile').click()};$('photocamera').onchange=e=>{addImage(e.target.files[0]);e.target.value=''};$('finishwall').onclick=()=>finishWall();$('photofile').onchange=e=>{addImage(e.target.files[0]);e.target.value=''};document.addEventListener('keydown',e=>{
+$('addpage').onclick=()=>addPage();$('checktype').onchange=e=>{if(e.target.value){addPage('checklist',e.target.value);e.target.value=''}};$('addphoto').onclick=()=>$('photofile').click();$('takephoto').onclick=openCamera;$('photoflycamera').onclick=openCamera;$('photoflygallery').onclick=()=>{hidePhotoFlyout();$('photofile').click()};$('photoflydelete').onclick=()=>{hidePhotoFlyout();deleteSelectedPhoto()};$('photocamera').onchange=e=>{addImage(e.target.files[0]);e.target.value=''};$('finishwall').onclick=()=>finishWall();$('photofile').onchange=e=>{addImage(e.target.files[0]);e.target.value=''};document.addEventListener('keydown',e=>{
  if((e.key==='Delete'||e.key==='Backspace')&&tool==='photo'&&selectedImage()&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){
   e.preventDefault();photoActionMenu();
  }
